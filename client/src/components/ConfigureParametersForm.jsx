@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import Papa from "papaparse";
 
+import { Info } from "lucide-react";
+import toast from "react-hot-toast";
 export default function ConfigureParameters({
   nextStep,
   prevStep,
@@ -28,26 +29,13 @@ export default function ConfigureParameters({
   }, [parameters, setFormData]);
   //#####################################################################################################
   const fetchDataFromAPI = async () => {
-    const apiKey = import.meta.env.VITE_API_KEY; // Get API key from .env
-    console.log(apiKey, "apikeyyy");
-    if (!apiKey) {
-      console.error("API key is missing. Check your .env file.");
-      alert("API key is missing. Please configure it.");
-      return null;
-    }
-
     const minParticipation = parametersData.minParticipation;
     const timeWindow = parametersData.timeWindow;
     const edgeWeight = parametersData.edgeWeight;
-    console.log(minParticipation, timeWindow, edgeWeight, "WORKED ???");
     const csvFile = csvFilee;
-    console.log(csvFile, "CSV FILE");
-
     const requestUrl = `http://localhost:5000/run-r`;
-    console.log(requestUrl, "URLURL");
     const formDataToSend = new FormData();
     formDataToSend.append("input", csvFile);
-
     formDataToSend.append("min_participation", minParticipation); // Example parameter
     formDataToSend.append("time_window", timeWindow); // Example parameter
     formDataToSend.append("subgraph", 1); // Example parameter
@@ -57,7 +45,6 @@ export default function ConfigureParameters({
       setIsLoading(true);
       const response = await fetch(requestUrl, {
         method: "POST",
-
         body: formDataToSend, // Include the CSV file as multipart form data
       });
 
@@ -68,17 +55,16 @@ export default function ConfigureParameters({
         const data = await response.json();
         setIsLoading(false);
         nextStep();
-        console.log("Response OK");
         console.log("API Response:", data);
         return data;
       }
     } catch (error) {
       console.error("Error fetching data:", error);
-      alert("Failed to fetch data. Please try again.");
+
+      toast.error("Failed to fetch data. Please try again.");
       return null;
     }
   };
-  //#####################################################################################################
   // Handle input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -87,55 +73,6 @@ export default function ConfigureParameters({
       [name]: value,
     }));
   };
-
-  const updateCsvHeaders = () => {
-    const file = formData.csvFile; // Access CSV file from formData
-    const updatedHeaders = formData.updatedHeaders; // Access updated headers
-
-    if (!file || !updatedHeaders) {
-      alert("Missing CSV file or header updates.");
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = ({ target }) => {
-      const csvText = target.result;
-
-      // Parse CSV content
-      Papa.parse(csvText, {
-        complete: (result) => {
-          let rows = result.data;
-          if (rows.length === 0) return;
-
-          console.log("Original Headers:", rows[0]); // Log original headers
-
-          // Modify the headers based on updatedHeaders
-          updatedHeaders.forEach(({ index, newName }) => {
-            if (index < rows[0].length) {
-              rows[0][index] = newName;
-            }
-          });
-
-          console.log("Updated Headers:", rows[0]); // Log updated headers
-
-          // Convert back to CSV format
-          const updatedCsv = Papa.unparse(rows);
-
-          // Create a Blob with the updated CSV
-          const updatedCsvBlob = new Blob([updatedCsv], { type: "text/csv" });
-
-          // Update formData state
-          setFormData((prevData) => ({
-            ...prevData,
-            csvFile: updatedCsvBlob, // Replace with the updated file
-          }));
-        },
-      });
-    };
-
-    reader.readAsText(file);
-  };
-
   const handleNextStep = () => {
     // Pass the updated parameters to formData
     setFormData((prevData) => ({
@@ -145,67 +82,151 @@ export default function ConfigureParameters({
 
     // Now you can safely update the CSV headers and proceed to the next step
     setTimeout(() => {
-      updateCsvHeaders();
       console.log("Updated formData:", formData); // Log the latest formData
       fetchDataFromAPI();
     }, 0);
   };
   const parametersData = formData.parameters;
   const csvFilee = formData.csvFile;
-  console.log("Parameters Data:", parametersData); // Log the parameters data
-  console.log("CSV File:", csvFilee); // Log the CSV file
 
   return (
     <>
-      <h1 className="text-xl font-semibold text-center">
-        Coordinated Sharing Behaviour Detection
-      </h1>
-
-      <h2 className="text-lg font-bold mb-4">Phase 3: Configure Parameters</h2>
-      <div className="bg-white shadow-md rounded-lg p-6 mt-4">
-        <form className="space-y-4 mx-auto">
-          <div className="flex items-center space-x-4">
-            <label className="text-sm font-medium w-60">
-              Minimum Participation
-            </label>
-            <input
-              type="number"
-              name="minParticipation"
-              value={parameters.minParticipation}
-              onChange={handleInputChange}
-              className="flex-1 p-2 border border-gray-300 shadow-md rounded-md w-full"
-            />
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">
+          Coordinated Sharing Behavior Detection
+        </h1>
+        <div className="flex items-center mt-2">
+          <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
+            3
           </div>
-
-          <div className="flex items-center space-x-4">
-            <label className="text-sm font-medium w-60">
-              Time Window (seconds)
-            </label>
-            <input
-              type="number"
-              name="timeWindow"
-              value={parameters.timeWindow}
-              onChange={handleInputChange}
-              className="flex-1 p-2 border border-gray-300 shadow-md rounded-md w-full"
-            />
+          <div className="ml-3 text-xl font-medium text-blue-500">
+            Set Parameters
           </div>
-
-          <div className="flex items-center space-x-4">
-            <label className="text-sm font-medium w-60">Edge Weight</label>
-            <input
-              type="text"
-              name="edgeWeight"
-              value={parameters.edgeWeight}
-              onChange={handleInputChange}
-              className="flex-1 p-2 border border-gray-300 shadow-md rounded-md w-full"
-            />
-          </div>
-        </form>
+        </div>
+        <div className="w-full h-1 bg-gray-200 mt-4 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-blue-500 rounded-full"
+            style={{ width: "90%" }}
+          ></div>
+        </div>
       </div>
+      {/* Main content area */}
+      <div className="flex flex-1 flex-col md:flex-row overflow-y-auto">
+        {/* Left sidebar */}
+        <div className="w-full md:w-2/6 p-4 bg-gray-200">
+          <div className="mt-8 p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
+            <h3 className="font-medium text-blue-800">Notes:</h3>
+            <ul className="list-disc pl-5 mt-2 text-sm text-left text-blue-700">
+              <li>
+                <div className="flex-1">
+                  <div className="flex items-center">
+                    <span>Minimum Participation</span>
+                    <div className="relative ml-2 group">
+                      <Info size={16} className="text-gray-500 cursor-help" />
+                      <div className="absolute z-10 top-full left-1/2 transform -translate-x-1/2 mt-2 w-64 px-3 py-2 bg-gray-800 text-white text-xs rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity duration-200">
+                        The threshold for the minimum level of coordinated
+                        participation required for inclusion in the analysis.
+                        Only users in the dataset with at least the specified
+                        number of shares will be processed.
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 h-2 w-2 bg-gray-800 rotate-45"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </li>
+              <li>
+                <div className="flex-1">
+                  <div className="flex items-center">
+                    <span>Time Window (seconds)</span>
+                    <div className="relative ml-2 group">
+                      <Info size={16} className="text-gray-500 cursor-help" />
+                      <div className="absolute z-10 top-full left-1/2 transform -translate-x-1/2 mt-2 w-64 px-3 py-2 bg-gray-800 text-white text-xs rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity duration-200">
+                        The time window indicates the interval considered for
+                        calculating co-shares. A very narrow time window (e.g.,
+                        &lt; 1 sec) tends to indicate automated behavior,
+                        whereas a time window of several hours may highlight
+                        human-coordinated behavior.
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 h-2 w-2 bg-gray-800 rotate-45"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </li>
+              <li>
+                <div className="flex-1">
+                  <div className="flex items-center">
+                    <span>Edge Weight</span>
+                    <div className="relative ml-2 group">
+                      <Info size={16} className="text-gray-500 cursor-help" />
+                      <div className="absolute z-10 top-full left-1/2 transform -translate-x-1/2 mt-2 w-64 px-3 py-2 bg-gray-800 text-white text-xs rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity duration-200">
+                        The edge threshold defines the minimum frequency of
+                        co-sharing required for a connection to be made. It
+                        measures co-sharing frequency as a proportion (from 0 to
+                        1) of all accounts in the dataset. A standard choice is
+                        the median (0.5). Using higher thresholds helps identify
+                        co-sharing activities between accounts that range from
+                        unusual to extremely unusual.{" "}
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 h-2 w-2 bg-gray-800 rotate-45"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
 
-      <div className="flex justify-between mt-5">
+        {/* Right content area */}
+        <div className="w-full md:w-4/6 p-6 bg-white rounded-r-lg flex justify-center items-center">
+          <form className="w-full max-w-lg space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+              <label className="text-sm font-medium md:col-span-1 md:text-right">
+                Minimum Participation :
+              </label>
+              <input
+                type="number"
+                name="minParticipation"
+                value={parameters.minParticipation}
+                onChange={handleInputChange}
+                className="p-2 border border-gray-300 shadow-md rounded-md text-center"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+              <label className="text-sm font-medium md:col-span-1 md:text-right">
+                Time Window (seconds) :
+              </label>
+              <input
+                type="number"
+                name="timeWindow"
+                value={parameters.timeWindow}
+                onChange={handleInputChange}
+                className="p-2 border border-gray-300 shadow-md rounded-md text-center"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+              <label className="text-sm font-medium md:col-span-1 md:text-right">
+                Edge Weight :
+              </label>
+              <input
+                type="text"
+                name="edgeWeight"
+                value={parameters.edgeWeight}
+                onChange={handleInputChange}
+                className="p-2 border border-gray-300 shadow-md rounded-md text-center"
+              />
+            </div>
+          </form>
+        </div>
+      </div>
+      {/* Row 1 - 80% height */}
+
+      {/* Footer with buttons */}
+      <div className="flex justify-between items-center p-4 bg-gray-100 rounded-b-lg">
         <button
-          className="bg-gray-500 text-white px-4 py-2 rounded"
+          className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded transition-colors"
           onClick={prevStep}
         >
           Back
@@ -214,28 +235,32 @@ export default function ConfigureParameters({
         <button
           disabled={isLoading}
           onClick={handleNextStep}
-          className="bg-blue-500 text-white px-4 py-2 rounded"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded transition-colors flex items-center"
         >
           {isLoading ? (
-            <div role="status">
+            <>
               <svg
-                aria-hidden="true"
-                className="w-6 h-6 text-gray-200 animate-spin dark:text-gray-600 fill-white"
-                viewBox="0 0 100 101"
-                fill="none"
+                className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
                 xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
               >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
                 <path
-                  d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                  className="opacity-75"
                   fill="currentColor"
-                />
-                <path
-                  d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-                  fill="currentFill"
-                />
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
               </svg>
-              <span className="sr-only">Loading...</span>
-            </div>
+              Processing...
+            </>
           ) : (
             "Next"
           )}

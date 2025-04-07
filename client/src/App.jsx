@@ -10,7 +10,6 @@ import { AuthContextProvider } from "./context/authContext";
 import Signup from "./pages/Register";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AuthGuard from "./context/AuthGuard";
-import FileUpload from "./components/FileUpload";
 
 axios.defaults.baseURL = "http://localhost:8000";
 axios.defaults.withCredentials = true;
@@ -48,7 +47,6 @@ function App() {
           }
         />
         <Route path="/learnmore" element={<Learnmore />} />
-        <Route path="/upload" element={<FileUpload />} />
       </Routes>
     </AuthContextProvider>
   );

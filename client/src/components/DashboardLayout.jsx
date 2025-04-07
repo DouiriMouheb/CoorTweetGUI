@@ -2,128 +2,119 @@ import { useLogout } from "../hooks/useLogout";
 import { useAuth } from "../context/authContext";
 import React, { useState } from "react";
 import {
-  HomeIcon,
   UserCircleIcon,
-  CogIcon,
   XMarkIcon,
-  ArrowRightIcon,
   ArrowLeftEndOnRectangleIcon,
-  PresentationChartBarIcon,
-  ArchiveBoxArrowDownIcon,
+  HomeIcon,
+  AdjustmentsHorizontalIcon,
+  ChevronDownIcon,
 } from "@heroicons/react/24/outline";
 import MultiStepForm from "./MultiStepForm";
 import UserProfileEditor from "./UserProfile";
 import NetworkHistory from "./NetworkHistory";
+import Dashboard from "./Dashboard";
 
 const DashboardLayout = ({ children }) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [activeComponent, setActiveComponent] = useState(<MultiStepForm />);
-
+  const [activeComponent, setActiveComponent] = useState(<Dashboard />);
+  const [isExpanded, setIsExpanded] = useState(false);
   const { logout } = useLogout();
   const { user } = useAuth();
 
-  const handleClick = () => logout();
+  const handleLogout = () => logout();
+  const toggleExpand = () => {
+    setIsExpanded(!isExpanded);
+  };
 
   return (
-    <>
-      <div className="flex h-screen">
-        {/* Sidebar */}
+    <div className="flex flex-col h-screen">
+      {/* Top Dynamic Island 
+       <div className="flex justify-center w-full pt-6 pb-4">
         <div
-          className={`${
-            isSidebarOpen ? "w-50" : "w-10"
-          } bg-[#2a2d34] text-white transition-width duration-300 h-full flex flex-col justify-between`}
+          className={`bg-black text-white rounded-full flex items-center justify-between transition-all duration-300 shadow-lg ${
+            isExpanded ? "w-full max-w-3xl py-3 px-6" : "w-64 py-2 px-4"
+          }`}
         >
-          <div>
-            <div className="flex justify-between items-center">
-              <h2
-                className={`${
-                  isSidebarOpen ? "block" : "hidden"
-                } text-lg p-4 font-semibold`}
-              >
-                {user && <span>{user.username}</span>}
-              </h2>
-
+          {/* Collapsed view }
+          {!isExpanded && (
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center">
+                <UserCircleIcon className="w-5 h-5 mr-2" />
+                <span className="font-medium">
+                  {user && <span>{user.username}</span>}
+                </span>
+              </div>
               <button
-                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                className="text-white hover:bg-indigo-700 p-2 rounded"
+                onClick={toggleExpand}
+                className="p-1 rounded-full hover:bg-gray-800"
               >
-                {isSidebarOpen ? (
-                  <XMarkIcon className="w-5 h-5" />
-                ) : (
-                  <ArrowRightIcon className="w-5 h-5" />
-                )}
+                <XMarkIcon className="w-4 h-4" />
               </button>
             </div>
+          )}
 
-            {/* Sidebar Menu */}
-            <ul className="mt-6 space-y-4">
-              {isSidebarOpen && (
-                <li>
-                  <button
-                    o
-                    onClick={() => setActiveComponent(<UserProfileEditor />)}
-                    className="flex items-center justify-center py-3 mt-6 text-sm font-medium text-white hover:bg-indigo-700 rounded-md w-full"
-                  >
-                    <UserCircleIcon className="inline-block w-5 h-5" />
-                    <span
-                      className={`${isSidebarOpen ? "inline" : "hidden"} ml-2`}
-                    >
-                      Profile
-                    </span>
-                  </button>
-                </li>
-              )}
-              {isSidebarOpen && (
-                <li>
-                  <button
-                    onClick={() => setActiveComponent(<MultiStepForm />)}
-                    className="flex items-center justify-center py-3 mt-6 text-sm font-medium text-white hover:bg-indigo-700 rounded-md w-full"
-                  >
-                    <PresentationChartBarIcon className="inline-block w-5 h-5" />
-                    <span
-                      className={`${isSidebarOpen ? "inline" : "hidden"} ml-2`}
-                    >
-                      Network
-                    </span>
-                  </button>
-                </li>
-              )}
-              {isSidebarOpen && (
-                <li>
-                  <button
-                    onClick={() => setActiveComponent(<NetworkHistory />)}
-                    className="flex items-center justify-center py-3 mt-6 text-sm font-medium text-white hover:bg-indigo-700 rounded-md w-full"
-                  >
-                    <ArchiveBoxArrowDownIcon className="inline-block w-5 h-5" />
-                    <span
-                      className={`${isSidebarOpen ? "inline" : "hidden"} ml-2`}
-                    >
-                      History
-                    </span>
-                  </button>
-                </li>
-              )}
-            </ul>
-          </div>
+          {/* Expanded view }
+          {isExpanded && (
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center">
+                <div className="flex items-center mr-6">
+                  <UserCircleIcon className="w-5 h-5 mr-2" />
+                  <span className="font-medium">{user.username}</span>
+                </div>
 
-          {/* Logout Button */}
-          {isSidebarOpen && (
-            <button
-              onClick={handleClick}
-              className="flex items-center justify-center py-3 mt-6 text-sm font-medium text-white hover:bg-indigo-700 rounded-md w-full"
-            >
-              <ArrowLeftEndOnRectangleIcon className="w-5 h-5 mr-3" />
-              Logout
-            </button>
+                <div className="flex space-x-4">
+                  <button
+                    onClick={() => {
+                      setActiveComponent(<Dashboard />);
+                      toggleExpand();
+                    }}
+                    className="flex items-center hover:text-blue-400 transition-colors"
+                  >
+                    <HomeIcon className="w-4 h-4 mr-1" />
+                    <span>Dashboard</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setActiveComponent(<UserProfileEditor />);
+                      toggleExpand();
+                    }}
+                    className="flex items-center hover:text-blue-400 transition-colors"
+                  >
+                    <AdjustmentsHorizontalIcon className="w-4 h-4 mr-1" />
+                    <span>Parameters</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center">
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center text-red-400 hover:text-red-300 transition-colors mr-4"
+                >
+                  <ArrowLeftEndOnRectangleIcon className="w-4 h-4 mr-1" />
+                  <span>Logout</span>
+                </button>
+
+                <button
+                  onClick={toggleExpand}
+                  className="p-1 rounded-full hover:bg-gray-800"
+                >
+                  <ChevronDownIcon className="w-4 h-4 transform rotate-180" />
+                </button>
+              </div>
+            </div>
           )}
         </div>
-
-        {/* Main Content */}
-        <div className="flex items-center justify-center min-h-screen w-full bg-indigo">
-          {activeComponent || children}
-        </div>
       </div>
-    </>
+      
+      
+      */}
+
+      {/* Main Content */}
+      <div className="flex items-center justify-center flex-grow w-full bg-indigo">
+        {activeComponent || children}
+      </div>
+    </div>
   );
 };
 

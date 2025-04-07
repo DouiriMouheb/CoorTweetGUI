@@ -3,9 +3,11 @@ import UploadDataset from "./UploadDataset";
 import PrepareDataset from "./PrepareDataset";
 import ConfigureParameters from "./ConfigureParametersForm";
 import ResultsComponent from "./ResultsComponent";
-import PlatformSelector from "./PlatformSelector";
+//import PlatformSelector from "./PlatformSelector";
+import PlatformSelector2 from "../components/PlatformSelector/index";
+import NetworkVisualization from "./NetworkVisualization";
 
-const MultiStepForm = () => {
+const MultiStepForm = ({ onClose }) => {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     csvFile: null,
@@ -15,17 +17,23 @@ const MultiStepForm = () => {
   const nextStep = () => setStep((prev) => prev + 1);
   const prevStep = () => setStep((prev) => prev - 1);
 
+  // Handle cancellation and return to dashboard
+  const handleCancel = () => {
+    onClose();
+  };
+
   return (
-    <div className="w-[90%] h-[95vh] mx-auto p-4 flex flex-col justify-between bg-gray-100 rounded-lg shadow-md">
+    <>
       {step === 1 && (
         <UploadDataset
           nextStep={nextStep}
           formData={formData}
           setFormData={setFormData}
+          onCancel={handleCancel}
         />
       )}
       {step === 2 && (
-        <PlatformSelector
+        <PlatformSelector2
           nextStep={nextStep}
           prevStep={prevStep}
           formData={formData}
@@ -48,14 +56,15 @@ const MultiStepForm = () => {
           setFormData={setFormData}
         />
       )}
-      {step === 4 && (
+      {step === 4 && <NetworkVisualization />}
+      {/*  {step === 4 && (
         <ResultsComponent
           nextStep={nextStep}
           prevStep={prevStep}
           formData={formData}
         />
-      )}
-    </div>
+      )} */}
+    </>
   );
 };
 
