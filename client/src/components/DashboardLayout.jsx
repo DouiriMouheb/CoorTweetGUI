@@ -12,10 +12,10 @@ import {
 import MultiStepForm from "./MultiStepForm";
 import UserProfileEditor from "./UserProfile";
 import NetworkHistory from "./NetworkHistory";
-import Dashboard from "./Dashboard";
-
+import LandingDashboard from "./LandingDashboard";
+ 
 const DashboardLayout = ({ children }) => {
-  const [activeComponent, setActiveComponent] = useState(<Dashboard />);
+  const [activeComponent, setActiveComponent] = useState(<LandingDashboard />);
   const [isExpanded, setIsExpanded] = useState(false);
   const { logout } = useLogout();
   const { user } = useAuth();
@@ -26,7 +26,7 @@ const DashboardLayout = ({ children }) => {
   };
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col">
       {/* Top Dynamic Island 
        <div className="flex justify-center w-full pt-6 pb-4">
         <div
@@ -110,8 +110,11 @@ const DashboardLayout = ({ children }) => {
       
       */}
 
+
+      
+
       {/* Main Content */}
-      <div className="flex items-center justify-center flex-grow w-full bg-indigo">
+      <div className="flex items-center justify-center flex-grow  bg-indigo">
         {activeComponent || children}
       </div>
     </div>

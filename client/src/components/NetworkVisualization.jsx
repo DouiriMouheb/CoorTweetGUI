@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import NetworkGraph from "./NetworkGraph";
 import ClusterTable from "./ClusterTable";
+import { motion } from "framer-motion";
 import {
   UserCircleIcon,
   XMarkIcon,

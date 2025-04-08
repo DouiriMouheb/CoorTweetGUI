@@ -1,6 +1,7 @@
 import "./App.css";
 import { Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
+import LoginScreen from "./pages/LoginScreen"
 import Learnmore from "./pages/Learnmore";
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
@@ -42,7 +43,7 @@ function App() {
           path="/login"
           element={
             <AuthGuard>
-              <Login />
+              <LoginScreen />
             </AuthGuard>
           }
         />

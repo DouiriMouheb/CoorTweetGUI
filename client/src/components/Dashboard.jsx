@@ -179,9 +179,9 @@ const Dashboard = ({ children }) => {
     );
   };
   return (
-    <div className="w-full max-w-7xl h-[95vh] mx-auto p-4 flex flex-col justify-between bg-gray-100 rounded-lg shadow-md overflow-auto">
+    <div className="w-full  h-[100vh] mx-auto p-4 flex flex-col justify-between bg-gray-100 rounded-lg shadow-md overflow-auto">
       <div className="flex justify-center w-full pt-6 pb-4">
-        <div
+      <div
           className={`bg-black text-white rounded-full flex items-center justify-between transition-all duration-300 shadow-lg ${
             isExpanded ? "w-full max-w-3xl py-3 px-6" : "w-64 py-2 px-4"
           }`}
