@@ -7,8 +7,13 @@ import NetworkVisualization from "./NetworkVisualization";
 import NetworkScreen from "./NetworkScreen" ;
 import LoadingSpinner from "./LoadingSpinner";
 import { useLogout } from "../hooks/useLogout";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import UserProfileEditor from "./UserProfile";
+import ConfirmationModal from "./ConfirmationModal.jsx";
+import { useToast } from "./Toast.jsx";
+import NetworkGraphComponent from "./NetworkGraphComponent.jsx"
+
 
 import {
   UserCircleIcon,
@@ -19,13 +24,14 @@ import {
   ChevronDownIcon,
   ChevronRightIcon,
 } from "@heroicons/react/24/outline";
+import UserProfile from "./ProfileScreen";
 
 const LandingDashboard = ({ children }) => {
-  
+    const { showToast } = useToast();
   const [isExpanded, setIsExpanded] = useState(false);
   const handleLogout = () => logout();
   const { logout } = useLogout();
-
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [showDashboard, setShowDashboard] = useState(true);
   const [activeComponent, setActiveComponent] = useState(null);
@@ -47,23 +53,23 @@ const LandingDashboard = ({ children }) => {
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
   };
-  // Open delete confirmation dialog
-  const openDeleteDialog = (id, name) => {
-    setDeleteDialog({
-      isOpen: true,
-      projectId: id,
-      projectName: name,
-    });
-  };
+//   // Open delete confirmation dialog
+//   const openDeleteDialog = (id, name) => {
+//     setDeleteDialog({
+//       isOpen: true,
+//       projectId: id,
+//       projectName: name,
+//     });
+//   };
 
-  // Close delete confirmation dialog
-  const closeDeleteDialog = () => {
-    setDeleteDialog({
-      isOpen: false,
-      projectId: null,
-      projectName: "",
-    });
-  };
+//   // Close delete confirmation dialog
+//   const closeDeleteDialog = () => {
+//     setDeleteDialog({
+//       isOpen: false,
+//       projectId: null,
+//       projectName: "",
+//     });
+//   };
 
   // Filter networks based on search term
   const filteredNetworks = networks.filter((network) =>
@@ -148,40 +154,93 @@ const LandingDashboard = ({ children }) => {
   }, [userId]); // Add userId to the dependency array
   // Add this function to your Dashboard component
 
-  // Fix your deleteNetwork function
-  const deleteNetwork = async (networkID) => {
+//   // Fix your deleteNetwork function
+//   const deleteNetwork = async (networkID) => {
+//     try {
+//       console.log("Deleting network with ID:", networkID); // Debug log
+
+//       // For objects
+
+//       await axios.post("http://localhost:5000/api/network/delete-network", {
+//         networkID,
+//       });
+
+//       // After successful deletion, refresh the networks list
+//       const updatedNetworks = await fetchNetworksForUser(userId);
+//       setNetworks(updatedNetworks);
+//       toast.success("Project Deleted successfully!");
+//       // Close the dialog
+//       closeDeleteDialog();
+//     } catch (error) {
+//       console.error("Error deleting network:", error);
+//       toast.error("Error deleting network:", error);
+//       // You might want to show an error message to the user
+//       setError("Failed to delete network. Please try again.");
+//       closeDeleteDialog();
+//     }
+//   };
+
+
+ // Update deleteNetwork function
+ const deleteNetwork = async (networkID) => {
     try {
-      console.log("Deleting network with ID:", networkID); // Debug log
-
-      // For objects
-
       await axios.post("http://localhost:5000/api/network/delete-network", {
         networkID,
       });
 
-      // After successful deletion, refresh the networks list
       const updatedNetworks = await fetchNetworksForUser(userId);
       setNetworks(updatedNetworks);
-      toast.success("Project Deleted successfully!");
-      // Close the dialog
-      closeDeleteDialog();
+      showToast("success", "Project deleted successfully!");
     } catch (error) {
       console.error("Error deleting network:", error);
-      toast.error("Error deleting network:", error);
-      // You might want to show an error message to the user
-      setError("Failed to delete network. Please try again.");
+      showToast("error", "Failed to delete project. Please try again.");
+    } finally {
       closeDeleteDialog();
     }
   };
-  const handleViewNetwork = (networkId, networkName) => {
-    setShowDashboard(false);
-    setActiveComponent(
-      <NetworkScreen
-        networkId={networkId}
-        onClose={() => setShowDashboard(true)}
-      />
-    );
+
+  // Remove the existing deleteDialog state and replace with:
+  const [deleteConfirmation, setDeleteConfirmation] = useState({
+    isOpen: false,
+    projectId: null,
+    projectName: "",
+  });
+
+  // Update open/close functions
+  const openDeleteDialog = (id, name) => {
+    setDeleteConfirmation({
+      isOpen: true,
+      projectId: id,
+      projectName: name,
+    });
   };
+
+  const closeDeleteDialog = () => {
+    setDeleteConfirmation({
+      isOpen: false,
+      projectId: null,
+      projectName: "",
+    });
+  };
+
+  // Update handleViewNetwork to use navigation
+  const handleViewNetwork = (networkId, networkName) => {
+    navigate(`/network/${networkId}`, {
+      state: { networkName } // Optional: pass additional state
+    });
+  };
+
+
+//   const handleViewNetwork = (networkId, networkName) => {
+//     setShowDashboard(false);
+//     // navigate("/visualization")
+//     setActiveComponent(
+//       <NetworkScreen
+//         networkId={networkId}
+//         onClose={() => setShowDashboard(true)}
+//       />
+//     );
+//   };
   return (
     <div className="w-full h-[100vh] mx-auto p-4 flex flex-col bg-gray-100 overflow-auto space-y-6">
       {/* Welcome Header */}
@@ -247,6 +306,7 @@ const LandingDashboard = ({ children }) => {
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 300 }}
               onClick={() => {
+                setShowDashboard(true);
                 setActiveComponent(<Dashboard />);
                 toggleExpand();
               }}
@@ -260,13 +320,14 @@ const LandingDashboard = ({ children }) => {
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 300 }}
               onClick={() => {
-                setActiveComponent(<UserProfileEditor />);
+                setShowDashboard(false);
+                setActiveComponent(<UserProfile />);
                 toggleExpand();
               }}
               className="flex items-center space-x-2 hover:text-blue-200 transition-colors duration-300"
             >
               <AdjustmentsHorizontalIcon className="w-5 h-5" />
-              <span>Parameters</span>
+              <span>Profile</span>
             </motion.button>
           </div>
         </div>
@@ -433,7 +494,7 @@ const LandingDashboard = ({ children }) => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {/* ... existing table body logic remains the same, update styling below ... */}
+                 
                     {loading ? (
                       <tr>
                         <td colSpan="2" className="px-6 py-4 text-center">
@@ -460,10 +521,11 @@ const LandingDashboard = ({ children }) => {
                             {network.name || network}
                           </td>
                           <td className="px-6 py-4 text-right space-x-4">
-                            <button
-                              onClick={() => handleViewNetwork(network.id || network, network.name || network)}
-                              className="text-gray-500 hover:text-blue-600 transition-colors"
-                            >
+                          <button
+//   onClick={() => handleViewNetwork(network.id || network, network.name || network)}
+onClick={() => handleViewNetwork(network.id || network, network.name || network)}
+  className="text-gray-500 hover:text-blue-600 transition-colors"
+>
                               <svg
                                 className="w-5 h-5"
                                 fill="none"
@@ -485,7 +547,8 @@ const LandingDashboard = ({ children }) => {
                               </svg>
                             </button>
                             <button
-                              onClick={() => openDeleteDialog(network.id || network, network.name || network)}
+                            //   onClick={() => openDeleteDialog(network.id || network, network.name || network)}
+                            onClick={() => openDeleteDialog(network.id || network, network.name || network)}
                               className="text-gray-500 hover:text-red-600 transition-colors"
                             >
                               <svg
@@ -569,7 +632,7 @@ const LandingDashboard = ({ children }) => {
       )}
 
       {/* Delete Confirmation Dialog */}
-      {deleteDialog.isOpen && (
+      {/* {deleteDialog.isOpen && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -597,7 +660,21 @@ const LandingDashboard = ({ children }) => {
             </div>
           </div>
         </motion.div>
-      )}
+      )} */}
+
+<ConfirmationModal
+  isOpen={deleteConfirmation.isOpen}
+  onClose={closeDeleteDialog}
+  onConfirm={() => deleteNetwork(deleteConfirmation.projectId)}
+  title="Delete Project"
+  message={`Are you sure you want to delete "${deleteConfirmation.projectName}"?`}
+  confirmText="Delete"
+  confirmColor="red"
+>
+  <p className="mt-2 text-sm text-red-600">
+    This action cannot be undone. All associated data will be permanently removed.
+  </p>
+</ConfirmationModal>
     </div>
   );
 };
