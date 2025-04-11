@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useAuth } from "../context/authContext";
 import { toast } from "react-hot-toast";
-
+import { useToast } from "../components/Toast";
 export const useLogin = () => {
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const { dispatch } = useAuth();
+  const { showToast } = useToast(); // Get the showToast function from Toast Context
 
   const login = async (email, password) => {
     setIsLoading(true);
@@ -30,13 +31,14 @@ export const useLogin = () => {
       localStorage.setItem("user", JSON.stringify(json));
       dispatch({ type: "LOGIN", payload: json });
 
-      // Success toast moved inside the hook
-      toast.success("Login successful!");
+      // Personalized welcome message
+      showToast("success", `Welcome back, ${json.username}!`);
       return true; // Return success flag
     } catch (err) {
       console.error("Login error:", err);
       setError(err.message);
-      toast.error(err.message); // Display error toast here
+      // Show error toast
+      showToast("error", err.message);
       return false; // Return failure flag
     } finally {
       setIsLoading(false);

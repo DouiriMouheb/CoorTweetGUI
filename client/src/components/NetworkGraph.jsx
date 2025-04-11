@@ -1,11 +1,21 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
+import { Maximize2, Minimize2 } from "lucide-react";
 
 const NetworkGraph = ({ networkData }) => {
-  console.log("Network data received in NetworkGraph:", networkData);
-
   const svgRef = useRef(null);
-
+  const containerRef = useRef(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const toggleFullscreen = () => {
+    const container = containerRef.current;
+    if (!document.fullscreenElement) {
+      container.requestFullscreen();
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen();
+      setIsFullscreen(false);
+    }
+  };
   useEffect(() => {
     if (!networkData || !networkData.data) return;
 
@@ -298,29 +308,25 @@ const NetworkGraph = ({ networkData }) => {
   }, [networkData]);
 
   return (
-    <div className="w-full h-full flex p-2 flex-col justify-center items-center">
-      <div
-        className="p-2 flex-grow shadow"
-        style={{ height: "300px", width: "400px" }}
+    <div
+      ref={containerRef}
+      className="w-full h-full relative bg-white rounded-2xl shadow-lg overflow-hidden"
+    >
+      <button
+        onClick={toggleFullscreen}
+        className="absolute top-2 right-2 z-10 bg-white shadow px-2 py-1 rounded-full hover:bg-gray-100 transition"
+        title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
       >
-        <svg ref={svgRef} className="w-full h-full" />
-      </div>
-      <div className="mt-4 text-sm text-left">
-        <p>
-          This visualization shows connections between users grouped by
-          communities.
-        </p>
-        <p>• Nodes represent users, colored by their community</p>
-        <p>
-          • Edges represent connections, with thickness indicating relationship
-          strength
-        </p>
-        <p>
-          • Communities are encircled with a light boundary of the same color
-        </p>
-        <p>
-          • You can zoom with the mouse wheel and pan by dragging the background
-        </p>
+        {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+      </button>
+      <svg ref={svgRef} className="w-full h-full" />
+      <div className="absolute bottom-2 left-2 bg-white bg-opacity-80 p-3 rounded-lg text-sm shadow backdrop-blur">
+        <p className="font-semibold mb-1 text-gray-800">Graph Overview</p>
+        <ul className="list-disc pl-5 text-gray-700 space-y-1">
+          <li>Nodes = users, colored by community</li>
+          <li>Edges = connections, thickness = strength</li>
+          <li>Zoom with mouse, drag to pan</li>
+        </ul>
       </div>
     </div>
   );

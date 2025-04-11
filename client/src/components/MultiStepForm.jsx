@@ -7,7 +7,7 @@ import PlatformSelectorStep from "../components/PlatformSelector/PlatformSelecto
 import PlatformSelector2 from "../components/PlatformSelector/index";
 import NetworkVisualization from "./NetworkVisualization";
 import UploadDatasetStep from ".//UploadDatasetStep";
-import ConfigureParametersFormStep from "./ConfigureParametersFormStep" ; 
+import ConfigureParametersFormStep from "./ConfigureParametersFormStep";
 import NetworkScreen from "./NetworkScreen";
 const MultiStepForm = ({ onClose }) => {
   const [step, setStep] = useState(1);
@@ -59,7 +59,9 @@ const MultiStepForm = ({ onClose }) => {
           setFormData={setFormData}
         />
       )}
-      {step === 4 && <NetworkScreen />}
+      {step === 4 && (
+        <NetworkScreen networkId={formData.networkId} formData={formData} />
+      )}
       {/*  {step === 4 && (
         <ResultsComponent
           nextStep={nextStep}

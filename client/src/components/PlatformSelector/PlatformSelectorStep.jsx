@@ -279,143 +279,147 @@ export default function PlatformSelectorStep({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="max-w-6xl mx-auto p-6 space-y-8"
-    >
-      {/* Header Section */}
-      <div className="text-center space-y-4">
-        <motion.h1
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
-        >
-          Coordinated Sharing Behavior Detection
-        </motion.h1>
-        
-        <div className="flex items-center justify-center gap-4">
-          <div className="px-4 py-2 bg-blue-100 text-blue-600 rounded-full font-medium flex items-center">
-            <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-2">
-              2
-            </span>
-            Prepare Dataset
-          </div>
-        </div>
-      </div>
-  
-      {/* Progress Indicator */}
-      <ProgressBar currentStep={2} totalSteps={3} />
-  
-      {/* Main Content Area */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* Left Sidebar */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="md:col-span-1 bg-white rounded-xl shadow-lg p-6"
-        >
-          <PlatformInfo selectedPlatform={selectedPlatform} />
-        </motion.div>
-  
-        {/* Right Content Area */}
-        <div className="md:col-span-3 space-y-6">
-          {/* Platform Detection */}
-          <motion.div
+    <div className="w-full h-[100vh] mx-auto p-4 flex flex-col bg-gray-100 overflow-auto space-y-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-6xl mx-auto  space-y-8"
+      >
+        {/* Header Section */}
+        <div className="text-center space-y-4">
+          <motion.h1
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="bg-blue-50 rounded-xl p-4 border border-blue-200"
+            className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
           >
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center">
-                1
-              </div>
-              <p className="text-gray-700">{getPlatformMessage()}</p>
+            Coordinated Sharing Behavior Detection
+          </motion.h1>
+
+          <div className="flex items-center justify-center gap-4">
+            <div className="px-4 py-2 bg-blue-100 text-blue-600 rounded-full font-medium flex items-center">
+              <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-2">
+                2
+              </span>
+              Prepare Dataset
             </div>
+          </div>
+        </div>
+
+        {/* Progress Indicator */}
+        <ProgressBar currentStep={2} totalSteps={3} />
+
+        {/* Main Content Area */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {/* Left Sidebar */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="md:col-span-1 bg-white rounded-xl shadow-lg p-6"
+          >
+            <PlatformInfo selectedPlatform={selectedPlatform} />
           </motion.div>
-  
-          {/* Selectors */}
-          {selectedPlatform !== PLATFORMS.PREPROCESSED &&
-            selectedPlatform !== PLATFORMS.OTHER && (
-              <div className="space-y-6">
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                >
-                  <AccountSourceSelector
-                    selectedPlatform={selectedPlatform}
-                    accountSourceOptions={accountSourceOptions}
-                    formData={formData}
-                    handleAccountSourceChange={handleAccountSourceChange}
-                    isLoading={isLoading}
-                  />
-                </motion.div>
-  
-                {formData.accountSource && (
+
+          {/* Right Content Area */}
+          <div className="md:col-span-3 space-y-6">
+            {/* Platform Detection */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="bg-blue-50 rounded-xl p-4 border border-blue-200"
+            >
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center">
+                  1
+                </div>
+                <p className="text-gray-700">{getPlatformMessage()}</p>
+              </div>
+            </motion.div>
+
+            {/* Selectors */}
+            {selectedPlatform !== PLATFORMS.PREPROCESSED &&
+              selectedPlatform !== PLATFORMS.OTHER && (
+                <div className="space-y-6">
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                   >
-                    <ObjectIDSourceSelector
+                    <AccountSourceSelector
                       selectedPlatform={selectedPlatform}
-                      objectIdSourceOptions={objectIdSourceOptions}
+                      accountSourceOptions={accountSourceOptions}
                       formData={formData}
-                      handleObjectIdSourceChange={handleObjectIdSourceChange}
+                      handleAccountSourceChange={handleAccountSourceChange}
                       isLoading={isLoading}
                     />
                   </motion.div>
-                )}
-              </div>
-            )}
+
+                  {formData.accountSource && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                    >
+                      <ObjectIDSourceSelector
+                        selectedPlatform={selectedPlatform}
+                        objectIdSourceOptions={objectIdSourceOptions}
+                        formData={formData}
+                        handleObjectIdSourceChange={handleObjectIdSourceChange}
+                        isLoading={isLoading}
+                      />
+                    </motion.div>
+                  )}
+                </div>
+              )}
+          </div>
         </div>
-      </div>
-  
-      {/* Footer with Navigation Buttons */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="flex justify-between"
-      >
-        <button
-          onClick={prevStep}
-          disabled={isLoading}
-          className="px-6 py-3 rounded-lg font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+
+        {/* Footer with Navigation Buttons */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex justify-between"
         >
-          Back
-        </button>
-  
-        <button
-          disabled={isLoading || disableButton || (
-            selectedPlatform !== PLATFORMS.PREPROCESSED &&
-            (!formData.accountSource || !formData.objectIdSource)
-          )}
-          className={`px-6 py-3 rounded-lg font-medium transition-all ${
-            isLoading
-              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-              : "bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:shadow-lg"
-          }`}
-          onClick={() => {
-            setIsLoading(true);
-            updateCsvHeaders()
-              .then(() => nextStep())
-              .catch((err) => {
-                console.error("Failed to update CSV:", err);
-                toast.error("Failed to update CSV. Please try again.");
-                setIsLoading(false);
-                setIsDisabled(true);
-              });
-          }}
-        >
-          {isLoading ? (
-            <div className="flex items-center">
-              <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2" />
-              Processing...
-            </div>
-          ) : (
-            "Next Step →"
-          )}
-        </button>
+          <button
+            onClick={prevStep}
+            disabled={isLoading}
+            className="px-6 py-3 rounded-lg font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+          >
+            Back
+          </button>
+
+          <button
+            disabled={
+              isLoading ||
+              disableButton ||
+              (selectedPlatform !== PLATFORMS.PREPROCESSED &&
+                (!formData.accountSource || !formData.objectIdSource))
+            }
+            className={`px-6 py-3 rounded-lg font-medium transition-all ${
+              isLoading
+                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                : "bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:shadow-lg"
+            }`}
+            onClick={() => {
+              setIsLoading(true);
+              updateCsvHeaders()
+                .then(() => nextStep())
+                .catch((err) => {
+                  console.error("Failed to update CSV:", err);
+                  toast.error("Failed to update CSV. Please try again.");
+                  setIsLoading(false);
+                  setIsDisabled(true);
+                });
+            }}
+          >
+            {isLoading ? (
+              <div className="flex items-center">
+                <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2" />
+                Processing...
+              </div>
+            ) : (
+              "Next Step →"
+            )}
+          </button>
+        </motion.div>
       </motion.div>
-    </motion.div>
+    </div>
   );
 }

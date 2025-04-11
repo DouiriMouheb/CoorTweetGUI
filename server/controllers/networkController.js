@@ -2,10 +2,24 @@ const Network = require("../models/network");
 
 // Save network data
 const saveNetwork = async (req, res) => {
-  const { userId, data, networkName } = req.body;
+  const {
+    userId,
+    data,
+    networkName,
+    minParticipation,
+    timeWindow,
+    edgeWeight,
+  } = req.body;
 
   try {
-    const network = await Network.create({ userId, data, networkName });
+    const network = await Network.create({
+      userId,
+      data,
+      networkName,
+      minParticipation,
+      timeWindow,
+      edgeWeight,
+    });
     res.status(201).json(network);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -41,6 +55,7 @@ const getNetwork = async (req, res) => {
   }
 };
 // get network names for each user
+
 const getNetworkNames = async (req, res) => {
   const { userId } = req.body;
 
@@ -48,7 +63,9 @@ const getNetworkNames = async (req, res) => {
     const networks = await Network.find({ userId });
 
     if (!networks || networks.length === 0) {
-      return res.status(404).json({ error: "Networks not found" });
+      return res.status(200).json({
+        message: "No networks found for this user. Try creating a new project.",
+      });
     }
 
     // Create an array of objects with both name and id
@@ -59,7 +76,8 @@ const getNetworkNames = async (req, res) => {
 
     res.status(200).json(networkData);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error("Error retrieving networks:", error);
+    return res.status(500).json({ error: error.message });
   }
 };
 
