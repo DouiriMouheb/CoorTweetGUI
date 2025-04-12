@@ -9,7 +9,7 @@ import {
   TableCellsIcon,
   CpuChipIcon,
 } from "@heroicons/react/24/outline";
-import NetworkGraphComponent from "./NetworkGraphComponent";
+
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 const NetworkScreen = () => {
   const { networkId } = useParams();
@@ -31,7 +31,6 @@ const NetworkScreen = () => {
           { networkId }
         );
         setNetwork(response.data);
-        console.log("999999999999", network);
         setNetworkName(response.data.networkName);
         setError(null);
       } catch (err) {
@@ -104,15 +103,15 @@ const NetworkScreen = () => {
               <span className="text-sm font-medium text-gray-800 truncate max-w-[160px]">
                 {networkName || "Loading..."}
               </span>
-              <span className="text-xs text-gray-500">ID: {networkId}</span>
+              {/*<span className="text-xs text-gray-500">ID: {networkId}</span> */}
             </div>
           </motion.div>
 
-          {/* Connection Status */}
+          {/* Connection Status 
           <motion.div
             whileHover={{ scale: 1.05 }}
             className="h-2 w-2 bg-green-500 rounded-full shadow-sm border border-green-600/30"
-          />
+          />*/}
         </div>
       </motion.div>
       <div className="pt-20">
@@ -129,7 +128,6 @@ const NetworkScreen = () => {
               className="w-full h-full p-6"
             >
               <NetworkGraph networkData={network} />
-              {/*<NetworkGraphComponent networkData={network} */}
             </motion.div>
           ) : (
             <div className="absolute inset-0 flex items-center justify-center text-gray-500">

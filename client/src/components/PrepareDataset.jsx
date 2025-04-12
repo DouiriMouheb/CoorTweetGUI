@@ -1,7 +1,6 @@
 import React from "react";
 import { useState, useEffect } from "react";
 const PrepareDataset = ({ nextStep, prevStep, formData, setFormData }) => {
-  console.log(formData);
   const [columns, setColumns] = useState([]);
   const [updatedHeaders, setUpdatedHeaders] = useState([]);
   useEffect(() => {

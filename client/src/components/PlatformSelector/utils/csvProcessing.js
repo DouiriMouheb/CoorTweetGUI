@@ -62,9 +62,6 @@ export const processCSVWithChunking = async (
         }
       },
       complete: () => {
-        console.log(
-          `CSV processing complete. Processed: ${totalProcessed}, Skipped: ${totalSkipped}, Errors: ${totalErrors}`
-        );
         resolve(results);
       },
       error: (error) => {

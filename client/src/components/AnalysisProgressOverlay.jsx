@@ -69,20 +69,20 @@ export const AnalysisProgressOverlay = ({
               <>
                 {/* Header */}
                 <div className="text-center mb-6">
-                  <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  <h2 className="text-2xl font-bold bg-[#00926c] bg-clip-text text-transparent">
                     Analyzing Network
                   </h2>
-                  <p className="text-gray-500 mt-2">
+                  <p className="text-[#3d3d3c] mt-2">
                     Please wait while we process your data
                   </p>
                 </div>
 
                 {/* Progress percentage */}
                 <div className="flex justify-between items-center mb-1">
-                  <span className="text-sm font-medium text-blue-700">
+                  <span className="text-sm font-medium text-[#00926c]">
                     Progress
                   </span>
-                  <span className="text-sm font-medium text-blue-700">
+                  <span className="text-sm font-medium text-[#00926c]">
                     {Math.round(percentageComplete)}%
                   </span>
                 </div>
@@ -90,7 +90,7 @@ export const AnalysisProgressOverlay = ({
                 {/* Progress bar */}
                 <div className="w-full bg-gray-200 rounded-full h-2.5 mb-6">
                   <motion.div
-                    className="bg-gradient-to-r from-blue-500 to-purple-600 h-2.5 rounded-full"
+                    className="bg-[#00926c] h-2.5 rounded-full"
                     initial={{ width: 0 }}
                     animate={{ width: `${percentageComplete}%` }}
                     transition={{ duration: 0.5 }}
@@ -106,12 +106,12 @@ export const AnalysisProgressOverlay = ({
                           className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors
                           ${
                             index < currentStep
-                              ? "bg-green-500 text-white"
+                              ? "bg-[#00926c] text-white"
                               : index === currentStep
                               ? status === "error" && currentStep === index
                                 ? "bg-red-500 text-white animate-pulse"
-                                : "bg-blue-500 text-white animate-pulse"
-                              : "bg-gray-200 text-gray-400"
+                                : "bg-[#3d3d3c] text-white animate-pulse"
+                              : "bg-gray-200 text-[#3d3d3c]"
                           }`}
                         >
                           {index < currentStep ? (
@@ -136,11 +136,11 @@ export const AnalysisProgressOverlay = ({
                             className={`font-medium ${
                               index === currentStep
                                 ? status === "error" && currentStep === index
-                                  ? "text-red-600"
-                                  : "text-blue-600"
+                                  ? "text-[#00926c]"
+                                  : "text-[#3d3d3c]"
                                 : index < currentStep
-                                ? "text-green-600"
-                                : "text-gray-400"
+                                ? "text-[#00926c]"
+                                : "text-[#3d3d3c]"
                             }`}
                           >
                             {step.name}
@@ -152,7 +152,7 @@ export const AnalysisProgressOverlay = ({
                               className={`text-sm mt-1 ${
                                 status === "error" && currentStep === index
                                   ? "text-red-500"
-                                  : "text-gray-500"
+                                  : "text-[#3d3d3c]"
                               }`}
                             >
                               {status === "error" && currentStep === index
@@ -183,14 +183,14 @@ export const AnalysisProgressOverlay = ({
                     delay: 0.2,
                   }}
                 >
-                  <CheckCircle className="w-24 h-24 text-green-500 mb-4" />
+                  <CheckCircle className="w-24 h-24 text-[#00926c] mb-4" />
                 </motion.div>
 
-                <h2 className="text-2xl font-bold text-green-600 mb-2">
+                <h2 className="text-2xl font-bold text-[#00926c] mb-2">
                   Analysis Complete!
                 </h2>
 
-                <p className="text-gray-600">
+                <p className="text-[#3d3d3c]">
                   Your network has been successfully created
                 </p>
 
@@ -198,7 +198,7 @@ export const AnalysisProgressOverlay = ({
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.5 }}
-                  className="text-sm text-gray-500 mt-6"
+                  className="text-sm text-[#3d3d3c] mt-6"
                 >
                   Redirecting to network view...
                 </motion.p>
@@ -228,7 +228,7 @@ export const AnalysisProgressOverlay = ({
                   Analysis Failed
                 </h2>
 
-                <p className="text-gray-600">{errorMessage}</p>
+                <p className="text-[#3d3d3c]">{errorMessage}</p>
 
                 <div className="mt-6 p-4 bg-red-50 border border-red-100 rounded-lg">
                   <div className="flex items-start">
@@ -243,7 +243,7 @@ export const AnalysisProgressOverlay = ({
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.5 }}
-                  className="text-sm text-gray-500 mt-6"
+                  className="text-sm text-[#3d3d3c] mt-6"
                 >
                   Redirecting to dashboard in 5 seconds...
                 </motion.p>

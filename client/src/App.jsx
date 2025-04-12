@@ -1,6 +1,5 @@
 import "./App.css";
 import { Routes, Route } from "react-router-dom";
-import Login from "./pages/Login";
 import LoginScreen from "./pages/LoginScreen";
 import Learnmore from "./pages/Learnmore";
 import Home from "./pages/Home";
@@ -24,6 +23,7 @@ function App() {
         <Routes>
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/network/:networkId" element={<NetworkScreen />} />
           </Route>
           <Route
             path="/"
@@ -50,9 +50,6 @@ function App() {
             }
           />
           <Route path="/learnmore" element={<Learnmore />} />
-          {/* <Route path="/visualisation" element={<NetworkGraphComponent />} /> */}
-          {/* <Route path="/network/:networkId" element={<NetworkGraphComponent />} /> */}
-          <Route path="/network/:networkId" element={<NetworkScreen />} />
         </Routes>
       </ToastProvider>
     </AuthContextProvider>

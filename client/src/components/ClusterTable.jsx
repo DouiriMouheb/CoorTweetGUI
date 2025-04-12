@@ -184,15 +184,6 @@ const ClusterTable = ({ networkData, loading }) => {
   if (loading) {
     return (
       <div className="bg-white rounded-lg shadow p-6">
-        {/*  <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium">Cluster Statistics</h3>
-          <button
-            className="px-3 py-1 text-sm bg-gray-100 text-gray-500 rounded hover:bg-gray-200 cursor-not-allowed opacity-60"
-            disabled
-          >
-            Download CSV
-          </button>
-        </div>*/}
         <div className="overflow-x-auto">
           <table className="min-w-full">
             <thead>
@@ -222,15 +213,6 @@ const ClusterTable = ({ networkData, loading }) => {
 
   return (
     <div className="bg-white  ">
-      {/*   <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-medium">Cluster Statistics</h3>
-        <button
-          className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
-          onClick={downloadCSV}
-        >
-          Download CSV
-        </button>
-      </div>*/}
       <div className="overflow-x-auto">
         <table className="min-w-full">
           <thead>

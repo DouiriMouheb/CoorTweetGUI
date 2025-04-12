@@ -86,8 +86,6 @@ export default function ConfigureParametersFormStep({
         }
       );
 
-      console.log("Network saved successfully:", response.data);
-      console.log("Network ID:", response.data._id);
       toast.success("Network saved successfully");
 
       // Return the network ID or the entire response data
@@ -179,8 +177,6 @@ export default function ConfigureParametersFormStep({
         throw new Error("No valid network data was generated");
       }
 
-      console.log("API Response:", data);
-
       // Save the network data after successfully receiving it
       const savedNetworkData = await saveNetwork(data);
 
@@ -193,7 +189,6 @@ export default function ConfigureParametersFormStep({
 
       // Store the network ID for navigation
       setSavedNetworkId(savedNetworkData._id);
-      console.log("Network ID saved to formData:", savedNetworkData._id);
 
       // Complete all steps before showing success state
       await simulateDelay(1000);
@@ -272,7 +267,6 @@ export default function ConfigureParametersFormStep({
 
     // Now you can safely update the CSV headers and proceed to the next step
     setTimeout(() => {
-      console.log("Updated formData:", formData); // Log the latest formData
       fetchDataFromAPI();
     }, 0);
   };
@@ -300,7 +294,7 @@ export default function ConfigureParametersFormStep({
           <motion.h1
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
+            className="text-3xl font-bold bg-[#00926c] bg-clip-text text-transparent"
           >
             Coordinated Sharing Behavior Detection
           </motion.h1>

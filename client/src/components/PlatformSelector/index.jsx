@@ -27,7 +27,6 @@ export default function PlatformSelector2({
     if (formData.csvHeaders && formData.csvHeaders.length > 0) {
       const detectedPlatform = identifyDataSource(formData.csvHeaders);
       setSelectedPlatform(detectedPlatform);
-      console.log("Platform detection attempted:", detectedPlatform);
       // Update formData with detected platform
       setFormData((prev) => ({
         ...prev,
@@ -38,9 +37,7 @@ export default function PlatformSelector2({
       autoSelectSources(detectedPlatform);
     }
   }, [formData.csvHeaders]);
-  useEffect(() => {
-    console.log(selectedPlatform, "updated platform");
-  }, [selectedPlatform]);
+  useEffect(() => {}, [selectedPlatform]);
   // Auto-select sources for certain platforms
   const autoSelectSources = useCallback((platform) => {
     if (
@@ -192,7 +189,6 @@ export default function PlatformSelector2({
 
       let transformedData;
       if (useChunking) {
-        console.log("Processing large file with chunking...");
         transformedData = await processCSVWithChunking(file);
       } else {
         // For small files, process all at once
@@ -237,11 +233,6 @@ export default function PlatformSelector2({
         ...prevData,
         csvFile: updatedCsvBlob, // Replace with the updated file
       }));
-
-      console.log(
-        `CSV transformation complete. Processed ${transformedData.length} rows.`
-      );
-      console.log(`Estimated file size: ${estimatedSizeMB.toFixed(2)} MB`);
 
       if (estimatedSizeMB > 15) {
         toast.error(

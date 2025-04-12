@@ -71,7 +71,7 @@ const UploadDatasetStep = ({ nextStep, formData, setFormData }) => {
           <motion.h1
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
+            className="text-3xl font-bold bg-gradient-to-r bg-[#00926c] bg-clip-text text-transparent"
           >
             Coordinated Sharing Behavior Detection
           </motion.h1>
@@ -101,7 +101,7 @@ const UploadDatasetStep = ({ nextStep, formData, setFormData }) => {
             className={`border-2 border-dashed rounded-xl p-8 cursor-pointer transition-all
       ${
         isDragActive
-          ? "border-blue-500 bg-gradient-to-br from-blue-50 to-blue-100"
+          ? "border-blue-500 bg-gradient-to-br bg-[#00926c]"
           : "border-gray-200 bg-white hover:border-blue-400"
       }`}
           >
@@ -184,7 +184,7 @@ const UploadDatasetStep = ({ nextStep, formData, setFormData }) => {
             disabled={!formData.csvFile}
             className={`px-6 py-3 rounded-lg font-medium transition-all flex items-center ${
               formData.csvFile
-                ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:shadow-lg"
+                ? "bg-gradient-to-r bg-[#00926c] text-white hover:shadow-lg"
                 : "bg-gray-200 text-gray-400 cursor-not-allowed"
             }`}
           >

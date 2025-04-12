@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import MultiStepForm from "./MultiStepForm";
 import { useAuth } from "../context/authContext";
 import axios from "axios";
@@ -9,7 +9,6 @@ import { motion } from "framer-motion";
 
 import ConfirmationModal from "./ConfirmationModal.jsx";
 import { useToast } from "./Toast.jsx";
-import NetworkGraphComponent from "./NetworkGraphComponent.jsx";
 
 import {
   UserCircleIcon,
@@ -22,36 +21,58 @@ import {
 } from "@heroicons/react/24/outline";
 import UserProfile from "./ProfileScreen";
 
-// Create a custom hook for network data fetching and caching
+// Enhanced custom hook for network data fetching and caching
 const useNetworks = (userId) => {
   const [networks, setNetworks] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [loadingDelete, setLoadingDelete] = useState(false);
   const [error, setError] = useState(null);
   const [lastFetched, setLastFetched] = useState(null);
   const { showToast } = useToast();
 
-  // Cache timeout in milliseconds (5 minutes)
-  const CACHE_TIMEOUT = 5 * 60 * 1000;
+  // Increased cache timeout to 15 minutes for better performance
+  const CACHE_TIMEOUT = 15 * 60 * 1000;
 
-  // Create API instance with defaults
+  // Reference to track if component is mounted
+  const isMounted = useRef(true);
+
+  // Create API instance with defaults and better timeout
   const api = useMemo(() => {
     const instance = axios.create({
       baseURL: "http://localhost:5000/api",
-      timeout: 10000,
+      timeout: 30000, // Increased timeout to 30 seconds for reliability
       headers: {
         "Content-Type": "application/json",
       },
     });
 
-    // Add response interceptor for error handling
+    // Enhanced response interceptor with better error handling
     instance.interceptors.response.use(
       (response) => response,
       (error) => {
         console.error("API Error:", error);
-        showToast(
-          "error",
-          error.response?.data?.message || "Network error occurred"
-        );
+
+        // Handle network connectivity issues
+        if (!error.response) {
+          showToast(
+            "error",
+            "Network connection error. Please check your internet connection."
+          );
+          return Promise.reject(new Error("Network connection error"));
+        }
+
+        // Handle server-side errors with clear messages
+        if (error.response?.status >= 500) {
+          showToast("error", "Server error occurred. Please try again later.");
+        } else {
+          // Handle client-side errors with specific messages
+          showToast(
+            "error",
+            error.response?.data?.message || "An unexpected error occurred"
+          );
+        }
+
         return Promise.reject(error);
       }
     );
@@ -59,7 +80,14 @@ const useNetworks = (userId) => {
     return instance;
   }, [showToast]);
 
-  // Fetch networks function
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
+  // Enhanced fetch networks function with better caching and error handling
   const fetchNetworks = useCallback(
     async (force = false) => {
       // Return cached data if available and not forced refresh
@@ -72,64 +100,142 @@ const useNetworks = (userId) => {
         return networks;
       }
 
+      // Handle case with no user ID
       if (!userId) {
-        setLoading(false);
+        if (isMounted.current) {
+          setInitialLoading(false);
+          setLoading(false);
+          setNetworks([]);
+          setError(null);
+        }
         return [];
       }
 
-      try {
+      // Only set loading if this isn't the initial load
+      // This prevents UI flicker when refreshing data
+      if (!initialLoading) {
         setLoading(true);
+      }
+
+      try {
         const response = await api.post("/network/get-networks-names", {
           userId,
         });
-        const fetchedNetworks = response.data;
 
-        setNetworks(fetchedNetworks);
-        setLastFetched(Date.now());
-        setError(null);
+        // Validate response data
+        const fetchedNetworks = Array.isArray(response.data)
+          ? response.data
+          : [];
+
+        if (isMounted.current) {
+          setNetworks(fetchedNetworks);
+          setLastFetched(Date.now());
+          setError(null);
+          setLoading(false);
+          setInitialLoading(false);
+        }
+
         return fetchedNetworks;
       } catch (err) {
-        setError("Failed to load networks");
+        if (isMounted.current) {
+          setError(
+            err.message === "Network connection error"
+              ? "Connection error. Please check your internet connection."
+              : "Failed to load networks. Please try again."
+          );
+          setLoading(false);
+          setInitialLoading(false);
+
+          // Keep old networks data on error instead of clearing it
+          // This allows users to still see and interact with cached data
+        }
         throw err;
-      } finally {
-        setLoading(false);
       }
     },
     [userId, lastFetched, networks, api]
   );
 
-  // Delete network function
+  // Enhanced delete network function with optimistic updates and rollback
   const deleteNetwork = useCallback(
     async (networkID) => {
-      try {
-        await api.post("/network/delete-network", { networkID });
+      if (!networkID) {
+        showToast("error", "Invalid network ID");
+        return false;
+      }
 
-        // Update local state without full refetch
+      setLoadingDelete(true);
+
+      // Store previous state for rollback if needed
+      const previousNetworks = [...networks];
+
+      try {
+        // Optimistic UI update - remove network immediately
         setNetworks((prev) =>
           prev.filter((network) => network.id !== networkID)
         );
+
+        // Attempt the actual deletion
+        await api.post("/network/delete-network", { networkID });
+
+        showToast("success", "Project deleted successfully!");
+
         return true;
       } catch (error) {
         console.error("Error deleting network:", error);
-        throw error;
+
+        // Rollback on error - restore previous state
+        setNetworks(previousNetworks);
+
+        showToast("error", "Failed to delete project. Please try again.");
+
+        return false;
+      } finally {
+        if (isMounted.current) {
+          setLoadingDelete(false);
+        }
       }
     },
-    [api]
+    [api, networks, showToast]
   );
 
-  // Load networks on component mount
+  // Load networks on component mount with debounced retry
   useEffect(() => {
-    if (userId) {
-      fetchNetworks();
-    }
+    let retryTimeout;
+    let retryCount = 0;
+    const MAX_RETRIES = 3;
+
+    const loadNetworks = async () => {
+      if (!userId) return;
+
+      try {
+        await fetchNetworks();
+      } catch (err) {
+        // Implement exponential backoff for retries
+        if (retryCount < MAX_RETRIES) {
+          const delay = Math.min(1000 * 2 ** retryCount, 8000);
+          retryCount++;
+
+          retryTimeout = setTimeout(loadNetworks, delay);
+        }
+      }
+    };
+
+    loadNetworks();
+
+    return () => {
+      if (retryTimeout) clearTimeout(retryTimeout);
+    };
   }, [userId, fetchNetworks]);
 
   return {
     networks,
-    loading,
+    loading: loading || initialLoading,
+    initialLoading,
     error,
     fetchNetworks,
     deleteNetwork,
+    loadingDelete,
+    hasNetworks: networks.length > 0,
   };
 };
 
@@ -201,7 +307,7 @@ const useSearchAndPagination = (items, itemsPerPage = 5) => {
   };
 };
 
-// Skeleton loading component for table rows
+// Enhanced TableRowSkeleton with more realistic appearance
 const TableRowSkeleton = () => (
   <tr className="animate-pulse">
     <td className="px-6 py-4">
@@ -216,6 +322,118 @@ const TableRowSkeleton = () => (
   </tr>
 );
 
+// Enhanced network count display component
+const NetworkCountDisplay = ({ loading, initialLoading, count }) => {
+  if (initialLoading) {
+    return (
+      <div
+        className="h-10 bg-gray-200 rounded animate-pulse"
+        style={{ width: "40px" }}
+      ></div>
+    );
+  }
+
+  return (
+    <p className="text-3xl font-bold text-black-600">
+      {count}
+      {loading && !initialLoading && (
+        <span className="ml-2 text-xs text-gray-500">(updating...)</span>
+      )}
+    </p>
+  );
+};
+
+// Empty state component for better UX
+const EmptyNetworksState = ({ searchTerm, onCreateNew, setSearchTerm }) => (
+  <tr>
+    <td colSpan="2" className="px-6 py-8 text-center">
+      <div className="flex flex-col items-center justify-center">
+        {searchTerm ? (
+          <>
+            <svg
+              className="w-12 h-12 text-gray-400 mb-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+            <p className="text-gray-500 mb-1">
+              No networks found matching "{searchTerm}"
+            </p>
+            <button
+              onClick={() => setSearchTerm("")}
+              className="text-blue-500 hover:text-blue-700 font-medium"
+            >
+              Clear search
+            </button>
+          </>
+        ) : (
+          <>
+            <svg
+              className="w-12 h-12 text-gray-400 mb-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"
+              />
+            </svg>
+            <p className="text-gray-500 mb-3">
+              You don't have any networks yet
+            </p>
+            <button
+              onClick={onCreateNew}
+              className="px-4 py-2 bg-[#00926c] text-white rounded-lg hover:bg-opacity-90 transition-colors"
+            >
+              Create your first project
+            </button>
+          </>
+        )}
+      </div>
+    </td>
+  </tr>
+);
+
+// Network error component with retry functionality
+const NetworkErrorState = ({ error, onRetry }) => (
+  <tr>
+    <td colSpan="2" className="px-6 py-6 text-center">
+      <div className="flex flex-col items-center justify-center">
+        <svg
+          className="w-10 h-10 text-red-500 mb-3"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.5}
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+          />
+        </svg>
+        <p className="text-red-500 font-medium mb-1">{error}</p>
+        <button
+          onClick={() => onRetry(true)}
+          className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+        >
+          Try Again
+        </button>
+      </div>
+    </td>
+  </tr>
+);
+
 const LandingDashboard = ({ children }) => {
   const { showToast } = useToast();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -225,9 +443,17 @@ const LandingDashboard = ({ children }) => {
   const [showDashboard, setShowDashboard] = useState(true);
   const [activeComponent, setActiveComponent] = useState(null);
 
-  // Use custom hook for fetching and managing networks
-  const { networks, loading, error, fetchNetworks, deleteNetwork } =
-    useNetworks(user?.userId);
+  // Use enhanced custom hook for fetching and managing networks
+  const {
+    networks,
+    loading,
+    initialLoading,
+    error,
+    fetchNetworks,
+    deleteNetwork,
+    loadingDelete,
+    hasNetworks,
+  } = useNetworks(user?.userId);
 
   // Use custom hook for search and pagination
   const {
@@ -286,17 +512,27 @@ const LandingDashboard = ({ children }) => {
     });
   };
 
-  // Handle network deletion with optimistic UI update
   const handleDeleteNetwork = async () => {
     const { projectId, projectName } = deleteConfirmation;
 
+    if (!projectId) {
+      showToast("error", "Invalid project selected");
+      closeDeleteDialog();
+      return;
+    }
+
     try {
-      await deleteNetwork(projectId);
-      showToast("success", "Project deleted successfully!");
+      const result = await deleteNetwork(projectId);
+
+      if (result) {
+        showToast("success", "Project deleted successfully!");
+      }
+
+      // Close the dialog regardless of result
+      closeDeleteDialog();
     } catch (error) {
-      // Error is already handled in the hook
+      console.error("Error in delete handler:", error);
       showToast("error", "Failed to delete project. Please try again.");
-    } finally {
       closeDeleteDialog();
     }
   };
@@ -304,64 +540,44 @@ const LandingDashboard = ({ children }) => {
   // Navigate to network view
   const handleViewNetwork = useCallback(
     (networkId, networkName) => {
+      if (!networkId) {
+        showToast("error", "Invalid network selected");
+        return;
+      }
+
       navigate(`/network/${networkId}`, {
         state: { networkName },
       });
     },
-    [navigate]
+    [navigate, showToast]
   );
 
-  // Render network count with skeleton loader
-  const renderNetworkCount = useMemo(() => {
-    if (loading) {
-      return (
-        <div
-          className="h-10 bg-gray-200 rounded animate-pulse"
-          style={{ width: "40px" }}
-        ></div>
-      );
-    }
-    return (
-      <p className="text-3xl font-bold text-blue-600">{networks.length}</p>
-    );
-  }, [loading, networks.length]);
-
-  // Render table content with loading states
+  // Enhanced table content rendering with better loading and error states
   const renderTableContent = useMemo(() => {
-    if (loading && networks.length === 0) {
-      return Array(5)
+    // Initial loading state (first load)
+    if (initialLoading) {
+      return Array(4)
         .fill(0)
         .map((_, index) => <TableRowSkeleton key={`skeleton-${index}`} />);
     }
 
+    // Error state
     if (error) {
-      return (
-        <tr>
-          <td colSpan="2" className="px-6 py-4 text-center text-red-500">
-            {error}
-            <button
-              onClick={() => fetchNetworks(true)}
-              className="ml-2 text-blue-500 hover:text-blue-700 underline"
-            >
-              Retry
-            </button>
-          </td>
-        </tr>
-      );
+      return <NetworkErrorState error={error} onRetry={fetchNetworks} />;
     }
 
+    // Empty state - either no search results or no networks at all
     if (currentItems.length === 0) {
       return (
-        <tr>
-          <td colSpan="2" className="px-6 py-4 text-center text-gray-500">
-            {searchTerm
-              ? "No networks found matching your search"
-              : "No networks found"}
-          </td>
-        </tr>
+        <EmptyNetworksState
+          searchTerm={searchTerm}
+          onCreateNew={handleCreateProject}
+          setSearchTerm={setSearchTerm}
+        />
       );
     }
 
+    // Populated network list
     return currentItems.map((network, index) => (
       <motion.tr
         key={network.id || `network-${index}`}
@@ -369,7 +585,7 @@ const LandingDashboard = ({ children }) => {
         animate={{ opacity: 1 }}
         className="hover:bg-gray-50"
       >
-        <td className="px-6 py-4 text-sm font-medium text-blue-600">
+        <td className="px-6 py-4 text-sm font-medium text-black-600">
           {network.name || network}
         </td>
         <td className="px-6 py-4 text-right space-x-4">
@@ -423,14 +639,15 @@ const LandingDashboard = ({ children }) => {
       </motion.tr>
     ));
   }, [
-    currentItems,
+    initialLoading,
     error,
-    fetchNetworks,
-    handleViewNetwork,
-    loading,
-    networks.length,
-    openDeleteDialog,
+    currentItems,
     searchTerm,
+    fetchNetworks,
+    handleCreateProject,
+    handleViewNetwork,
+    openDeleteDialog,
+    setSearchTerm,
   ]);
 
   return (
@@ -446,7 +663,7 @@ const LandingDashboard = ({ children }) => {
             damping: 20,
             duration: 0.5,
           }}
-          className={`bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full flex items-center justify-between shadow-lg ${
+          className={`bg-[#00926c] text-white rounded-full flex items-center justify-between shadow-lg ${
             isExpanded ? "w-full max-w-4xl py-3 px-6" : "w-64 py-2 px-4"
           }`}
           style={{
@@ -488,7 +705,7 @@ const LandingDashboard = ({ children }) => {
                   transition={{ staggerChildren: 0.1 }}
                 >
                   <UserCircleIcon className="w-6 h-6 mr-2 transition-transform duration-300" />
-                  <span className="font-medium">{user.username}</span>
+                  <span className="font-medium">{user?.username}</span>
                 </motion.div>
 
                 <div className="flex space-x-6">
@@ -561,10 +778,10 @@ const LandingDashboard = ({ children }) => {
                 className="bg-white rounded-2xl shadow-lg p-6"
               >
                 <div className="flex items-center justify-between">
-                  <div className="p-4 bg-blue-100 rounded-xl">
+                  <div className="p-4 bg-[#00926c] rounded-xl">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      className="w-8 h-8 text-blue-600"
+                      className="w-8 h-8 text-white"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -578,10 +795,14 @@ const LandingDashboard = ({ children }) => {
                     </svg>
                   </div>
                   <div className="text-right">
-                    <h3 className="text-sm font-medium text-gray-500 mb-1">
+                    <h3 className="text-sm font-medium text-black-500 mb-1">
                       Networks
                     </h3>
-                    {renderNetworkCount}
+                    <NetworkCountDisplay
+                      loading={loading}
+                      initialLoading={initialLoading}
+                      count={networks.length}
+                    />
                   </div>
                 </div>
               </motion.div>
@@ -594,10 +815,10 @@ const LandingDashboard = ({ children }) => {
                 className="bg-white rounded-2xl shadow-lg p-6"
               >
                 <div className="flex items-center justify-between">
-                  <div className="p-4 bg-purple-100 rounded-xl">
+                  <div className="p-4 bg-[#00926c] rounded-xl">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      className="w-8 h-8 text-purple-600"
+                      className="w-8 h-8 text-white"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -611,10 +832,10 @@ const LandingDashboard = ({ children }) => {
                     </svg>
                   </div>
                   <div className="text-right">
-                    <h3 className="text-sm font-medium text-gray-500 mb-1">
+                    <h3 className="text-sm font-medium text-black-500 mb-1">
                       Datasets
                     </h3>
-                    <p className="text-3xl font-bold text-purple-600">3</p>
+                    <p className="text-3xl font-bold text-black-600">3</p>
                   </div>
                 </div>
               </motion.div>
@@ -627,7 +848,7 @@ const LandingDashboard = ({ children }) => {
               >
                 <button
                   onClick={handleCreateProject}
-                  className="w-full h-full bg-gradient-to-r from-blue-500 to-purple-600 text-white p-8 rounded-2xl shadow-lg flex flex-col items-center justify-center hover:shadow-xl transition-all"
+                  className="w-full h-full bg-[#00926c] text-white p-8 rounded-2xl shadow-lg flex flex-col items-center justify-center hover:shadow-xl transition-all"
                 >
                   <span className="text-2xl font-bold mb-2">+</span>
                   <span className="text-xl font-semibold">
@@ -657,7 +878,7 @@ const LandingDashboard = ({ children }) => {
                   {!loading && (
                     <button
                       onClick={() => fetchNetworks(true)}
-                      className="ml-2 text-blue-500 hover:text-blue-700"
+                      className="ml-2 text-black-500 hover:text-blue-700"
                       title="Refresh networks"
                     >
                       <svg
@@ -773,6 +994,7 @@ const LandingDashboard = ({ children }) => {
         message={`Are you sure you want to delete "${deleteConfirmation.projectName}"?`}
         confirmText="Delete"
         confirmColor="red"
+        disabled={loadingDelete}
       >
         <p className="mt-2 text-sm text-red-600">
           This action cannot be undone. All associated data will be permanently

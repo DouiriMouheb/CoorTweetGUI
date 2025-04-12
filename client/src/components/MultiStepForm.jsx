@@ -1,11 +1,5 @@
 import React, { useState } from "react";
-import UploadDataset from "./UploadDataset";
-import PrepareDataset from "./PrepareDataset";
-import ConfigureParameters from "./ConfigureParametersForm";
-import ResultsComponent from "./ResultsComponent";
 import PlatformSelectorStep from "../components/PlatformSelector/PlatformSelectorStep";
-import PlatformSelector2 from "../components/PlatformSelector/index";
-import NetworkVisualization from "./NetworkVisualization";
 import UploadDatasetStep from ".//UploadDatasetStep";
 import ConfigureParametersFormStep from "./ConfigureParametersFormStep";
 import NetworkScreen from "./NetworkScreen";
@@ -42,15 +36,6 @@ const MultiStepForm = ({ onClose }) => {
           setFormData={setFormData}
         />
       )}
-
-      {/*step === 2 && (
-        <PrepareDataset
-          nextStep={nextStep}
-          prevStep={prevStep}
-          formData={formData}
-          setFormData={setFormData}
-        />
-      )*/}
       {step === 3 && (
         <ConfigureParametersFormStep
           nextStep={nextStep}
@@ -62,13 +47,6 @@ const MultiStepForm = ({ onClose }) => {
       {step === 4 && (
         <NetworkScreen networkId={formData.networkId} formData={formData} />
       )}
-      {/*  {step === 4 && (
-        <ResultsComponent
-          nextStep={nextStep}
-          prevStep={prevStep}
-          formData={formData}
-        />
-      )} */}
     </>
   );
 };

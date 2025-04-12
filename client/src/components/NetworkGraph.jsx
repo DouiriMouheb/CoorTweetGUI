@@ -20,7 +20,6 @@ const NetworkGraph = ({ networkData }) => {
     if (!networkData || !networkData.data) return;
 
     const data = networkData.data;
-    console.log(data, "eeeeehi");
 
     // Generate a color scale based on the number of communities
     const generateColorScale = (communities) => {
