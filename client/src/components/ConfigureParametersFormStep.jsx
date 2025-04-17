@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Info } from "lucide-react";
 import toast from "react-hot-toast";
 import { ProgressBar } from "./ProgressBar";
-import { AnalysisProgressOverlay } from "./AnalysisProgressOverlay";
+import { AnalysisProgressOverlay } from "./ProgressBars/AnalysisProgressOverlay";
 import { useAuth } from "../context/authContext";
 import axios from "axios";
 
@@ -18,7 +18,8 @@ export default function ConfigureParametersFormStep({
   const [analysisStep, setAnalysisStep] = useState(0);
   const [analysisStatus, setAnalysisStatus] = useState("processing"); // "processing", "success", "error"
   const [savedNetworkId, setSavedNetworkId] = useState(null);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [errorData, setErrorData] = useState(null);
+  const apiUrl = import.meta.env.VITE_API_URL;
 
   // Define the analysis steps
   const analysisSteps = [
@@ -77,7 +78,7 @@ export default function ConfigureParametersFormStep({
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/network/save-network",
+        `${apiUrl}/api/network/save-network`,
         networkData,
         {
           headers: {
@@ -92,11 +93,52 @@ export default function ConfigureParametersFormStep({
       return response.data;
     } catch (error) {
       console.error("Error saving network:", error);
-      setErrorMessage("Failed to save network data to database");
+      setErrorData({
+        status: "error",
+        error: {
+          stage: "saving_network",
+          message: "Failed to save network data to database",
+        },
+      });
       setAnalysisStatus("error");
       toast.error("Failed to save network.");
       throw error;
     }
+  };
+
+  // Map R script error stages to UI steps
+  const mapErrorStageToStep = (stage) => {
+    const stageToStepMap = {
+      // Data loading and parameter steps
+      parameter_parsing: 0,
+      file_access: 1,
+      file_reading: 1,
+      empty_data: 1,
+
+      // Algorithm step
+      detect_groups: 2,
+      no_coordination: 2,
+
+      // Network building step
+      network_generation: 3,
+      empty_graph_nodes: 3,
+      empty_graph_edges: 3,
+      edge_extraction: 3,
+      edge_processing: 3,
+      graph_creation: 3,
+      community_detection: 3,
+      single_community: 3,
+      vertex_extraction: 3,
+
+      // Saving step
+      output_preparation: 4,
+      json_conversion: 4,
+      saving_network: 4,
+    };
+
+    return stageToStepMap[stage] !== undefined
+      ? stageToStepMap[stage]
+      : analysisStep;
   };
 
   // Fetch data from the API and then save the network
@@ -105,7 +147,7 @@ export default function ConfigureParametersFormStep({
       // Reset states for a new analysis
       setIsLoading(true);
       setAnalysisStatus("processing");
-      setErrorMessage("");
+      setErrorData(null);
 
       // Step 1: Preparing data
       setAnalysisStep(0);
@@ -113,14 +155,35 @@ export default function ConfigureParametersFormStep({
 
       // Check if parameters are valid
       if (!parameters.projectName) {
+        setErrorData({
+          status: "error",
+          error: {
+            stage: "parameter_parsing",
+            message: "Project name is required",
+          },
+        });
         throw new Error("Project name is required");
       }
 
       if (parameters.minParticipation < 1) {
+        setErrorData({
+          status: "error",
+          error: {
+            stage: "parameter_parsing",
+            message: "Minimum participation must be at least 1",
+          },
+        });
         throw new Error("Minimum participation must be at least 1");
       }
 
       if (parameters.timeWindow < 1) {
+        setErrorData({
+          status: "error",
+          error: {
+            stage: "parameter_parsing",
+            message: "Time window must be at least 1 second",
+          },
+        });
         throw new Error("Time window must be at least 1 second");
       }
 
@@ -128,6 +191,13 @@ export default function ConfigureParametersFormStep({
         parseFloat(parameters.edgeWeight) < 0 ||
         parseFloat(parameters.edgeWeight) > 1
       ) {
+        setErrorData({
+          status: "error",
+          error: {
+            stage: "parameter_parsing",
+            message: "Edge weight must be between 0 and 1",
+          },
+        });
         throw new Error("Edge weight must be between 0 and 1");
       }
 
@@ -141,10 +211,17 @@ export default function ConfigureParametersFormStep({
       await simulateDelay(1500);
 
       if (!csvFile) {
+        setErrorData({
+          status: "error",
+          error: {
+            stage: "file_access",
+            message: "No CSV file provided",
+          },
+        });
         throw new Error("No CSV file provided");
       }
 
-      const requestUrl = `http://localhost:5000/run-r`;
+      const requestUrl = `${apiUrl}/r/run-r`;
       const formDataToSend = new FormData();
       formDataToSend.append("input", csvFile);
       formDataToSend.append("min_participation", minParticipation);
@@ -161,19 +238,48 @@ export default function ConfigureParametersFormStep({
       });
 
       if (!response.ok) {
+        setErrorData({
+          status: "error",
+          error: {
+            stage: "network_generation",
+            message: `Server error: ${response.status} ${response.statusText}`,
+          },
+        });
         throw new Error(
           `Server error: ${response.status} ${response.statusText}`
         );
+      }
+
+      // Parse the JSON response
+      const data = await response.json();
+
+      // Check if the response contains an error status from R script
+      if (data.status === "error") {
+        // Set error data from R script
+        setErrorData(data);
+
+        // Set the step based on the error stage
+        if (data.error && data.error.stage) {
+          setAnalysisStep(mapErrorStageToStep(data.error.stage));
+        }
+
+        setAnalysisStatus("error");
+        throw new Error(data.error?.message || "Analysis failed");
       }
 
       // Step 4: Building network
       setAnalysisStep(3);
       await simulateDelay(1000);
 
-      const data = await response.json();
-
       // Check if data is valid
       if (!data || Object.keys(data).length === 0) {
+        setErrorData({
+          status: "error",
+          error: {
+            stage: "network_generation",
+            message: "No valid network data was generated",
+          },
+        });
         throw new Error("No valid network data was generated");
       }
 
@@ -199,49 +305,92 @@ export default function ConfigureParametersFormStep({
       return data;
     } catch (error) {
       console.error("Error during analysis:", error);
-      // Determine at which step the error occurred and update the error message
-      let errorMsg = error.message || "An unexpected error occurred";
 
-      // Set detailed error message based on the current step
-      switch (analysisStep) {
-        case 0:
-          errorMsg = `Parameter error: ${errorMsg}`;
-          break;
-        case 1:
-          errorMsg = `CSV processing error: ${errorMsg}`;
-          break;
-        case 2:
-          errorMsg = `Algorithm error: ${errorMsg}`;
-          break;
-        case 3:
-          errorMsg = `Network construction error: ${errorMsg}`;
-          break;
-        case 4:
-          errorMsg = `Saving error: ${errorMsg}`;
-          break;
-        default:
-          errorMsg = `Error: ${errorMsg}`;
+      // If errorData is not already set, create appropriate error structure
+      if (!errorData) {
+        // Create error data based on the current step
+        switch (analysisStep) {
+          case 0:
+            setErrorData({
+              status: "error",
+              error: {
+                stage: "parameter_parsing",
+                message: `Parameter error: ${error.message}`,
+              },
+            });
+            break;
+          case 1:
+            setErrorData({
+              status: "error",
+              error: {
+                stage: "file_reading",
+                message: `CSV processing error: ${error.message}`,
+              },
+            });
+            break;
+          case 2:
+            setErrorData({
+              status: "error",
+              error: {
+                stage: "detect_groups",
+                message: `Algorithm error: ${error.message}`,
+              },
+            });
+            break;
+          case 3:
+            setErrorData({
+              status: "error",
+              error: {
+                stage: "network_generation",
+                message: `Network construction error: ${error.message}`,
+              },
+            });
+            break;
+          case 4:
+            setErrorData({
+              status: "error",
+              error: {
+                stage: "output_preparation",
+                message: `Saving error: ${error.message}`,
+              },
+            });
+            break;
+          default:
+            setErrorData({
+              status: "error",
+              error: {
+                stage: "unknown",
+                message: `Error: ${error.message}`,
+              },
+            });
+        }
       }
 
-      setErrorMessage(errorMsg);
       setAnalysisStatus("error");
-      toast.error(errorMsg);
+      toast.error(error.message);
       return null;
     }
   };
 
   // Handle completion of the success or error state and cleanup
   const handleAnalysisFinished = () => {
-    // Reset states
-    setIsLoading(false);
-    setAnalysisStatus("processing");
-    setAnalysisStep(0);
-    setErrorMessage("");
+    console.log("Analysis finished with status:", analysisStatus);
 
-    // Only go to the next step if the analysis was successful
+    // Reset only the loading state - keep other states intact until explicitly changed
+    setIsLoading(false);
+
+    // Only proceed to next step if success
     if (analysisStatus === "success") {
       nextStep();
+
+      // Reset states after navigation
+      setTimeout(() => {
+        setAnalysisStatus("processing");
+        setAnalysisStep(0);
+        setErrorData(null);
+      }, 500);
     }
+    // For error state, leave the error message visible until user takes action
   };
 
   // Helper function to simulate delay for progress visualization
@@ -280,7 +429,7 @@ export default function ConfigureParametersFormStep({
         steps={analysisSteps}
         status={analysisStatus}
         networkId={savedNetworkId}
-        errorMessage={errorMessage}
+        errorData={errorData}
         onFinish={handleAnalysisFinished}
       />
 

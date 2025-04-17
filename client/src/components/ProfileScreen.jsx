@@ -53,11 +53,11 @@ export default function UserProfile({ onUpdate }) {
           <motion.div
             initial={{ scale: 0.95 }}
             animate={{ scale: 1 }}
-            className="w-28 h-28 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-4xl font-semibold"
+            className="w-28 h-28 rounded-full bg-[#00926c] flex items-center justify-center text-white  text-4xl font-semibold"
           >
             {getInitials(username)}
           </motion.div>
-          <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium transition-colors">
+          <button className="text-sm text-[#00926c] hover:text-black font-medium transition-colors">
             Change Photo
           </button>
         </div>
@@ -116,7 +116,7 @@ export default function UserProfile({ onUpdate }) {
               type="submit"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+              className="w-full bg-[#00926c] hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
             >
               Save Changes
             </motion.button>

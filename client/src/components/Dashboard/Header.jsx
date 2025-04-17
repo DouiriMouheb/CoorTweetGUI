@@ -81,7 +81,7 @@ export default function Header({
             <div className="flex items-center space-x-4">
               <button
                 onClick={logout}
-                className="flex items-center space-x-2 text-red-200 hover:text-red-100"
+                className="flex items-center space-x-2 text-black hover:text-black-100"
               >
                 <ArrowLeftEndOnRectangleIcon className="w-5 h-5" />
                 <span>Logout</span>

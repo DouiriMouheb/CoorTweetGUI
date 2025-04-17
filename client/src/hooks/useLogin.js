@@ -7,13 +7,13 @@ export const useLogin = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { dispatch } = useAuth();
   const { showToast } = useToast(); // Get the showToast function from Toast Context
-
+  const apiUrl = import.meta.env.VITE_API_URL;
   const login = async (email, password) => {
     setIsLoading(true);
     setError(null); // Reset error before making request
 
     try {
-      const response = await fetch("http://localhost:5000/api/user/login", {
+      const response = await fetch(`${apiUrl}/api/user/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

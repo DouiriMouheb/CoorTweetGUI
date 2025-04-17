@@ -13,6 +13,7 @@ export const useNetworks = (userId) => {
   const CACHE_TIMEOUT = 15 * 60 * 1000;
   const isMounted = useRef(true);
   const fetchInProgress = useRef(false);
+  const apiUrl = import.meta.env.VITE_API_URL;
 
   // Set isMounted flag on mount/unmount
   useEffect(() => {
@@ -25,7 +26,7 @@ export const useNetworks = (userId) => {
 
   const api = useMemo(() => {
     const instance = axios.create({
-      baseURL: "http://localhost:5000/api",
+      baseURL: `${apiUrl}/api`,
       timeout: 30000,
       headers: { "Content-Type": "application/json" },
     });
@@ -92,7 +93,7 @@ export const useNetworks = (userId) => {
 
       try {
         const response = await axios.post(
-          "http://localhost:5000/api/network/get-networks-names",
+          `${apiUrl}/api/network/get-networks-names`,
           {
             userId,
           }

@@ -1,5 +1,5 @@
 /**
- * Facebook platform handler
+ * Facebook platform handler with fixed account_id formatting
  */
 export const facebookHandler = {
   getAccountSourceOptions: () => [
@@ -32,7 +32,8 @@ export const facebookHandler = {
       ? "post_owner.name"
       : "surface.name";
 
-    const accountIdVal = row[idField];
+    const accountId = row[idField];
+    const accountName = row[nameField];
     const contentIdVal = row.id;
     const timestampVal = row.creation_time;
     let objectIdSourceVal;
@@ -44,8 +45,8 @@ export const facebookHandler = {
     }
 
     const isValid = Boolean(
-      accountIdVal &&
-        row[nameField] &&
+      accountId &&
+        accountName &&
         contentIdVal &&
         timestampVal &&
         objectIdSourceVal
@@ -59,11 +60,33 @@ export const facebookHandler = {
       timestamp = Math.floor(new Date(timestampVal).getTime() / 1000);
     }
 
+    // Format the account_id as "Name (ID)"
+    const formattedAccountId = `${accountName} (${accountId})`;
+
     return {
-      account_id: String(accountIdVal).trim(),
+      account_id: formattedAccountId,
       content_id: String(contentIdVal).trim(),
       object_id: String(objectIdSourceVal || "").trim(),
       timestamp_share: timestamp,
     };
   },
 };
+
+/**
+ * Example usage:
+ *
+ * // Import your CSV data (this is pseudocode)
+ * const csvData = loadCSV('download_1741692148.csv');
+ *
+ * // Transform the data
+ * const transformedData = csvData
+ *   .map(row => facebookHandler.transformRow(
+ *     row,
+ *     'post_owner_facebook_account_source',
+ *     'text_facebook'
+ *   ))
+ *   .filter(row => row !== null);
+ *
+ * // Now transformedData contains rows with account_id formatted as "Name (ID)"
+ * // Example: "Amazing Ideas (2025862197830911)"
+ */

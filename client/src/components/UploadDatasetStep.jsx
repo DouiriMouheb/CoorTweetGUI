@@ -45,7 +45,7 @@ const UploadDatasetStep = ({ nextStep, formData, setFormData }) => {
     accept: {
       "text/csv": [".csv"],
     },
-    maxSize: 15 * 1024 * 1024, // 15MB
+    maxSize: 50 * 1024 * 1024, // 50MB
   });
 
   const removeFile = () => {
@@ -125,7 +125,7 @@ const UploadDatasetStep = ({ nextStep, formData, setFormData }) => {
                   </span>
                 </p>
                 <p className="text-xs text-gray-400 mt-2">
-                  Supported format: .csv (max 15MB)
+                  Supported format: .csv (max 50MB)
                 </p>
               </div>
             </div>
@@ -139,7 +139,7 @@ const UploadDatasetStep = ({ nextStep, formData, setFormData }) => {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <div className="p-3 bg-blue-100 rounded-lg">
-                  <FileText className="w-6 h-6 text-blue-600" />
+                  <FileText className="w-6 h-6 text-[#00926c]" />
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800">
@@ -149,7 +149,7 @@ const UploadDatasetStep = ({ nextStep, formData, setFormData }) => {
                     <span className="text-sm text-gray-500">
                       {(formData.csvFile.size / 1024 / 1024).toFixed(2)} MB
                     </span>
-                    <span className="text-blue-500 bg-blue-100 px-2 py-1 rounded-full text-xs font-medium">
+                    <span className="text-[#00926c] bg-blue-100 px-2 py-1 rounded-full text-xs font-medium">
                       Ready for analysis
                     </span>
                   </div>

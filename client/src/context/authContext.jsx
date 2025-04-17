@@ -5,7 +5,6 @@ import {
   useReducer,
   useState,
 } from "react";
-import LoadingSpinner from "../components/LoadingSpinner"; // Import the spinner
 
 export const AuthContext = createContext();
 
@@ -31,10 +30,6 @@ export const AuthContextProvider = ({ children }) => {
     }
     setTimeout(() => setLoading(false), 1000); // Add a slight delay for smooth UI
   }, []);
-
-  if (loading) {
-    return <LoadingSpinner />; // Show the spinner instead of flashing login
-  }
 
   return (
     <AuthContext.Provider value={{ ...state, dispatch }}>

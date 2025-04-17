@@ -41,7 +41,7 @@ export default function StatsCards({
       </motion.div>
 
       {/* Datasets */}
-      <motion.div className="bg-white rounded-2xl shadow-lg p-6">
+      {/*  <motion.div className="bg-white rounded-2xl shadow-lg p-6">
         <div className="flex items-center justify-between">
           <div className="p-4 bg-[#00926c] rounded-xl">
             <svg
@@ -66,6 +66,7 @@ export default function StatsCards({
           </div>
         </div>
       </motion.div>
+ */}
 
       {/* Create Project */}
       <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>

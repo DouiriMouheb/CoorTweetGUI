@@ -28,9 +28,9 @@ const Signup = () => {
           <motion.h1
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
+            className="text-3xl font-bold bg-[#00926c] bg-clip-text text-transparent"
           >
-            CoorTweet Analytics
+            CoorTweet
           </motion.h1>
           <h2 className="text-lg text-gray-600">Create your account</h2>
         </div>
@@ -78,7 +78,7 @@ const Signup = () => {
           <button
             disabled={isLoading}
             type="submit"
-            className="w-full py-3 px-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:shadow-md transition-shadow relative"
+            className="w-full py-3 px-4 bg-[#00926c] text-white rounded-lg font-medium hover:shadow-md transition-shadow relative"
           >
             {isLoading ? (
               <div className="flex items-center justify-center">

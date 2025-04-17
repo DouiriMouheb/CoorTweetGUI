@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeftIcon,
   ChartBarIcon,
+  AdjustmentsHorizontalIcon,
   TableCellsIcon,
   CpuChipIcon,
 } from "@heroicons/react/24/outline";
@@ -15,9 +16,13 @@ const NetworkScreen = () => {
   const { networkId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const apiUrl = import.meta.env.VITE_API_URL;
 
   const [network, setNetwork] = useState(null);
   const [networkName, setNetworkName] = useState(null);
+  const [edgeWeight, setEdgeWeight] = useState(null);
+  const [minParticipation, setMinParticipation] = useState(null);
+  const [timeWindow, setTimeWindow] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState(1);
@@ -26,12 +31,15 @@ const NetworkScreen = () => {
     const fetchNetworkData = async () => {
       try {
         setLoading(true);
-        const response = await axios.post(
-          "http://localhost:5000/api/network/get-network",
-          { networkId }
-        );
+        const response = await axios.post(`${apiUrl}/api/network/get-network`, {
+          networkId,
+        });
+        console.log(response.data);
         setNetwork(response.data);
         setNetworkName(response.data.networkName);
+        setTimeWindow(response.data.timeWindow);
+        setEdgeWeight(response.data.edgeWeight);
+        setMinParticipation(response.data.minParticipation);
         setError(null);
       } catch (err) {
         setError("Failed to load network data");
@@ -144,9 +152,8 @@ const NetworkScreen = () => {
           <div className="border-b border-gray-200">
             <div className="flex">
               {[
-                { id: 1, label: "Cluster Summary", icon: TableCellsIcon },
-                { id: 2, label: "Object Analysis", icon: ChartBarIcon },
-                { id: 3, label: "Node Insights", icon: CpuChipIcon },
+                { id: 1, label: "Summary", icon: TableCellsIcon },
+                { id: 2, label: "Parameters", icon: AdjustmentsHorizontalIcon },
               ].map((tab) => {
                 const IconComponent = tab.icon;
                 return (
@@ -191,35 +198,62 @@ const NetworkScreen = () => {
                 {activeTab === 2 && (
                   <div className="space-y-6">
                     <h3 className="text-2xl font-semibold text-gray-900">
-                      Object Coordination Analysis
+                      Parameters used to analyse the dataset
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Add actual coordination metrics here */}
-                      {[1, 2, 3].map((item) => (
-                        <div
-                          key={item}
-                          className="p-6 bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl border border-blue-100"
-                        >
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <h4 className="font-medium text-gray-900">
-                                Metric {item}
-                              </h4>
-                              <p className="text-sm text-gray-600">
-                                Description of metric
-                              </p>
+                    <div className="grid grid-cols-3 gap-6 w-full">
+                      {network &&
+                        network.data &&
+                        [
+                          {
+                            name: "Minimum participation",
+                            description:
+                              "The threshold for the minimum level of coordinated participation required for inclusion in the analysis.",
+                            value: minParticipation,
+                          },
+                          {
+                            name: "Time Window (seconds)",
+                            description:
+                              "The time window indicates the interval considered for calculating co-shares",
+                            value: timeWindow,
+                          },
+                          {
+                            name: "Edge Weight",
+                            description:
+                              "The edge threshold defines the minimum frequency of co-sharing required for a connection to be made.",
+                            value: edgeWeight,
+                          },
+                        ].map((metric, index) => (
+                          <div
+                            key={index}
+                            className="p-6 bg-[#00926c] rounded-xl border border-blue-100 w-full max-w-md"
+                          >
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <h4 className="font-medium text-white">
+                                  {metric.name} :
+                                  <span className="text-2xl font-bold pl-4 text-black-600">
+                                    {metric.value !== undefined &&
+                                    metric.value !== null
+                                      ? typeof metric.value === "number"
+                                        ? String(metric.value)
+                                        : metric.value
+                                      : "N/A"}
+                                  </span>
+                                </h4>
+                                {/*
+                                <p className="text-sm text-gray-600 text-lef pr-2">
+                                  {metric.description}
+                                </p>
+                               */}
+                              </div>
                             </div>
-                            <span className="text-2xl font-bold text-blue-600">
-                              {Math.random().toFixed(2)}
-                            </span>
                           </div>
-                        </div>
-                      ))}
+                        ))}
                     </div>
                   </div>
                 )}
 
-                {activeTab === 3 && (
+                {/*activeTab === 3 && (
                   <div className="space-y-6">
                     <h3 className="text-2xl font-semibold text-gray-900">
                       Node-Level Insights
@@ -233,7 +267,7 @@ const NetworkScreen = () => {
                           >
                             <div className="flex items-center space-x-4">
                               <div className="flex-shrink-0 p-3 bg-blue-100 rounded-lg">
-                                <ChartBarIcon className="w-6 h-6 text-blue-600" />
+                                <AdjustmentsHorizontalIcon className="w-6 h-6 text-blue-600" />
                               </div>
                               <div>
                                 <h4 className="font-medium text-gray-900">
@@ -251,7 +285,7 @@ const NetworkScreen = () => {
                       )}
                     </div>
                   </div>
-                )}
+                )*/}
               </motion.div>
             </AnimatePresence>
           </div>

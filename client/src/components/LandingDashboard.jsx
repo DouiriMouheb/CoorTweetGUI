@@ -30,6 +30,7 @@ const useNetworks = (userId) => {
   const [error, setError] = useState(null);
   const [lastFetched, setLastFetched] = useState(null);
   const { showToast } = useToast();
+  const apiUrl = import.meta.env.VITE_API_URL;
 
   // Increased cache timeout to 15 minutes for better performance
   const CACHE_TIMEOUT = 15 * 60 * 1000;
@@ -40,7 +41,7 @@ const useNetworks = (userId) => {
   // Create API instance with defaults and better timeout
   const api = useMemo(() => {
     const instance = axios.create({
-      baseURL: "http://localhost:5000/api",
+      baseURL: `${apiUrl}/api`,
       timeout: 30000, // Increased timeout to 30 seconds for reliability
       headers: {
         "Content-Type": "application/json",
@@ -744,7 +745,7 @@ const LandingDashboard = ({ children }) => {
                   whileHover={{ scale: 1.05 }}
                   transition={{ type: "spring", stiffness: 300 }}
                   onClick={handleLogout}
-                  className="flex items-center space-x-2 text-red-200 hover:text-red-100 transition-colors duration-300"
+                  className="flex items-center space-x-2 text-black-200 hover:text-black-100 transition-colors duration-300"
                 >
                   <ArrowLeftEndOnRectangleIcon className="w-5 h-5" />
                   <span>Logout</span>
@@ -808,7 +809,8 @@ const LandingDashboard = ({ children }) => {
               </motion.div>
 
               {/* Datasets Card */}
-              <motion.div
+
+              {/*  <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.1 }}
@@ -838,8 +840,7 @@ const LandingDashboard = ({ children }) => {
                     <p className="text-3xl font-bold text-black-600">3</p>
                   </div>
                 </div>
-              </motion.div>
-
+              </motion.div> */}
               {/* Create Project Button */}
               <motion.div
                 whileHover={{ scale: 1.02 }}
