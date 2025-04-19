@@ -6,13 +6,16 @@ const {
   getNetwork,
   deleteNetwork,
 } = require("../controllers/networkController");
+const requireAuth = require("../middleware/requireAuth"); // Import middleware
 const router = express.Router();
 
-router.post("/save-network", saveNetwork);
+// Apply authentication middleware to all network routes
+router.use(requireAuth);
 
+router.post("/save-network", saveNetwork);
 router.post("/get-networks", getNetworks);
 router.post("/get-network", getNetwork);
-// get networks names for each user
 router.post("/get-networks-names", getNetworkNames);
 router.post("/delete-network", deleteNetwork);
+
 module.exports = router;

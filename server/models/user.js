@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const { Schema } = mongoose;
 const bcrypt = require("bcrypt");
 const validator = require("validator");
+const crypto = require("crypto");
 
 // user schema
 const userSchema = new Schema({
@@ -18,6 +19,10 @@ const userSchema = new Schema({
     type: String,
     required: true,
   },
+  // Add these fields for password reset
+  resetPasswordToken: String,
+  resetPasswordExpiry: Date,
+  lastPasswordResetRequest: Date,
 });
 
 // statics method to signup user
@@ -47,6 +52,7 @@ userSchema.statics.signup = async function (username, email, password) {
   });
   return user;
 };
+
 // statics method to login user
 userSchema.statics.login = async function (email, password) {
   if (!email || !password) {
@@ -60,6 +66,58 @@ userSchema.statics.login = async function (email, password) {
   if (!match) {
     throw Error("Invalid password");
   }
+  return user;
+};
+
+// Add method to create password reset token
+userSchema.methods.createPasswordResetToken = function () {
+  const resetToken = crypto.randomBytes(32).toString("hex");
+
+  // Hash the token and store it in the database
+  this.resetPasswordToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+
+  // Set expiry (1 hour from now)
+  this.resetPasswordExpiry = Date.now() + 3600000;
+
+  // Return the unhashed token to send via email
+  return resetToken;
+};
+
+// Add method to reset password
+userSchema.statics.resetPassword = async function (token, newPassword) {
+  if (!newPassword) {
+    throw Error("Password is required");
+  }
+  if (!validator.isStrongPassword(newPassword)) {
+    throw Error("Password is not strong enough");
+  }
+
+  // Hash the token to compare with stored hash
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+  // Find user with valid token
+  const user = await this.findOne({
+    resetPasswordToken: hashedToken,
+    resetPasswordExpiry: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    throw Error("Token is invalid or has expired");
+  }
+
+  // Update password
+  const salt = await bcrypt.genSalt(10);
+  user.password = await bcrypt.hash(newPassword, salt);
+
+  // Clear reset token fields
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpiry = undefined;
+
+  await user.save();
+
   return user;
 };
 

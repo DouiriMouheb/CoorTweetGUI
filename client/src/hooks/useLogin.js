@@ -1,44 +1,43 @@
 import { useState } from "react";
 import { useAuth } from "../context/authContext";
-import { toast } from "react-hot-toast";
 import { useToast } from "../components/Toast";
+import api from "../services/api";
+
 export const useLogin = () => {
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const { dispatch } = useAuth();
-  const { showToast } = useToast(); // Get the showToast function from Toast Context
-  const apiUrl = import.meta.env.VITE_API_URL;
+  const { showToast } = useToast();
+
   const login = async (email, password) => {
     setIsLoading(true);
     setError(null); // Reset error before making request
 
     try {
-      const response = await fetch(`${apiUrl}/api/user/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
+      // Use our API service instead of direct fetch
+      const response = await api.post("/api/user/login", {
+        email,
+        password,
       });
 
-      const json = await response.json(); // Parse JSON response
+      const data = response.data;
 
-      if (!response.ok) {
-        throw new Error(json.error || "Login failed. Please try again.");
-      }
+      // Save user to localStorage
+      localStorage.setItem("user", JSON.stringify(data));
 
-      // If login is successful, save user data
-      localStorage.setItem("user", JSON.stringify(json));
-      dispatch({ type: "LOGIN", payload: json });
+      // Update auth context
+      dispatch({ type: "LOGIN", payload: data });
 
-      // Personalized welcome message
-      showToast("success", `Welcome back, ${json.username}!`);
+      showToast("success", "Login successful!");
       return true; // Return success flag
     } catch (err) {
       console.error("Login error:", err);
-      setError(err.message);
-      // Show error toast
-      showToast("error", err.message);
+
+      // Get error message from response or use generic message
+      const errorMessage =
+        err.response?.data?.error || "Login failed. Please try again.";
+      setError(errorMessage);
+      showToast("error", errorMessage);
       return false; // Return failure flag
     } finally {
       setIsLoading(false);

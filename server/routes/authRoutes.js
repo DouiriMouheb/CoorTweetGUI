@@ -19,4 +19,5 @@ router.get("/", test);
 router.post("/register", registrUser);
 router.post("/login", loginUser);
 router.get("/profile", getProfile);
+
 module.exports = router;

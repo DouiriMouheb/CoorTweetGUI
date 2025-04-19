@@ -42,7 +42,7 @@ const useNetworks = (userId) => {
   const api = useMemo(() => {
     const instance = axios.create({
       baseURL: `${apiUrl}/api`,
-      timeout: 30000, // Increased timeout to 30 seconds for reliability
+      timeout: 300000, // Increased timeout to 30 seconds for reliability
       headers: {
         "Content-Type": "application/json",
       },

@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import NetworkGraph from "./NetworkGraph";
 import ClusterTable from "./ClusterTable";
 import { motion, AnimatePresence } from "framer-motion";
@@ -10,8 +9,10 @@ import {
   TableCellsIcon,
   CpuChipIcon,
 } from "@heroicons/react/24/outline";
-
 import { useParams, useNavigate, useLocation } from "react-router-dom";
+import api from "../services/api"; // Import our API service
+import { toast } from "react-hot-toast";
+
 const NetworkScreen = () => {
   const { networkId } = useParams();
   const navigate = useNavigate();
@@ -31,10 +32,12 @@ const NetworkScreen = () => {
     const fetchNetworkData = async () => {
       try {
         setLoading(true);
-        const response = await axios.post(`${apiUrl}/api/network/get-network`, {
+        // Use our API service which automatically adds auth headers
+        const response = await api.post(`${apiUrl}/api/network/get-network`, {
           networkId,
         });
-        console.log(response.data);
+
+        console.log("Network data received:", response.data);
         setNetwork(response.data);
         setNetworkName(response.data.networkName);
         setTimeWindow(response.data.timeWindow);
@@ -42,33 +45,29 @@ const NetworkScreen = () => {
         setMinParticipation(response.data.minParticipation);
         setError(null);
       } catch (err) {
-        setError("Failed to load network data");
-        console.error(err);
+        console.error("Error fetching network data:", err);
+
+        // Handle different error types
+        if (err.response?.status === 401) {
+          toast.error("Authentication error. Please log in again.");
+          // Redirect to login page after a short delay
+          setTimeout(() => navigate("/login"), 1500);
+        } else if (err.response?.status === 404) {
+          setError("Network not found. It may have been deleted.");
+          toast.error("Network not found.");
+        } else {
+          setError("Failed to load network data. Please try again.");
+          toast.error("Failed to load network data.");
+        }
       } finally {
         setLoading(false);
       }
     };
 
-    fetchNetworkData();
-  }, [networkId]);
-
-  //   // Use the networkId from URL params
-  //   useEffect(() => {
-  //     const fetchNetworkData = async () => {
-  //       try {
-  //         // Use the networkId from URL
-  //         const response = await axios.post(
-  //           "http://localhost:5000/api/network/get-network",
-  //           { networkId } // Now using the parameter from the URL
-  //         );
-  //         setNetwork(response.data);
-  //       } catch (err) {
-  //         // Handle error
-  //       }
-  //     };
-
-  //     fetchNetworkData();
-  //   }, [networkId]);
+    if (networkId) {
+      fetchNetworkData();
+    }
+  }, [networkId, navigate, apiUrl]);
 
   // Update the back button to use navigation
   const handleBack = () => {
@@ -114,12 +113,6 @@ const NetworkScreen = () => {
               {/*<span className="text-xs text-gray-500">ID: {networkId}</span> */}
             </div>
           </motion.div>
-
-          {/* Connection Status 
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            className="h-2 w-2 bg-green-500 rounded-full shadow-sm border border-green-600/30"
-          />*/}
         </div>
       </motion.div>
       <div className="pt-20">
@@ -240,11 +233,6 @@ const NetworkScreen = () => {
                                       : "N/A"}
                                   </span>
                                 </h4>
-                                {/*
-                                <p className="text-sm text-gray-600 text-lef pr-2">
-                                  {metric.description}
-                                </p>
-                               */}
                               </div>
                             </div>
                           </div>
@@ -252,40 +240,6 @@ const NetworkScreen = () => {
                     </div>
                   </div>
                 )}
-
-                {/*activeTab === 3 && (
-                  <div className="space-y-6">
-                    <h3 className="text-2xl font-semibold text-gray-900">
-                      Node-Level Insights
-                    </h3>
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                      {["Centrality", "Connectivity", "Influence"].map(
-                        (metric, index) => (
-                          <div
-                            key={metric}
-                            className="p-6 bg-white rounded-xl border border-gray-200 hover:shadow-lg transition-shadow"
-                          >
-                            <div className="flex items-center space-x-4">
-                              <div className="flex-shrink-0 p-3 bg-blue-100 rounded-lg">
-                                <AdjustmentsHorizontalIcon className="w-6 h-6 text-blue-600" />
-                              </div>
-                              <div>
-                                <h4 className="font-medium text-gray-900">
-                                  {metric}
-                                </h4>
-                                <p className="text-2xl font-bold text-blue-600 mt-1">
-                                  {index === 0 && "0.85"}
-                                  {index === 1 && "124"}
-                                  {index === 2 && "High"}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        )
-                      )}
-                    </div>
-                  </div>
-                )*/}
               </motion.div>
             </AnimatePresence>
           </div>

@@ -1,178 +1,77 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import axios from "axios";
-import { useToast } from "../components/Toast.jsx";
+import { useState, useEffect, useCallback } from "react";
+import api from "../services/api";
+import { useToast } from "../components/Toast";
 
+/**
+ * Hook for managing network data operations
+ */
 export const useNetworks = (userId) => {
   const [networks, setNetworks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [loadingDelete, setLoadingDelete] = useState(false);
   const [error, setError] = useState(null);
-  const [lastFetched, setLastFetched] = useState(null);
+  const [loadingDelete, setLoadingDelete] = useState(false);
   const { showToast } = useToast();
-  const CACHE_TIMEOUT = 15 * 60 * 1000;
-  const isMounted = useRef(true);
-  const fetchInProgress = useRef(false);
-  const apiUrl = import.meta.env.VITE_API_URL;
 
-  // Set isMounted flag on mount/unmount
-  useEffect(() => {
-    isMounted.current = true;
-
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
-
-  const api = useMemo(() => {
-    const instance = axios.create({
-      baseURL: `${apiUrl}/api`,
-      timeout: 30000,
-      headers: { "Content-Type": "application/json" },
-    });
-
-    instance.interceptors.response.use(
-      (response) => response,
-      (error) => {
-        if (!error.response) {
-          showToast("error", "Network connection error.");
-        } else if (error.response?.status >= 500) {
-          showToast("error", "Server error occurred.");
-        } else {
-          showToast(
-            "error",
-            error.response?.data?.message || "Unexpected error."
-          );
-        }
-        return Promise.reject(error);
-      }
-    );
-
-    return instance;
-  }, [showToast]);
-
+  // Fetch networks when userId changes or on manual refresh
   const fetchNetworks = useCallback(
-    async (force = false) => {
-      // Check if fetch is already in progress to prevent multiple simultaneous calls
-      if (fetchInProgress.current) {
-        return networks;
-      }
-
-      // Use cached data if appropriate
-      if (
-        !force &&
-        lastFetched &&
-        Date.now() - lastFetched < CACHE_TIMEOUT &&
-        networks.length > 0
-      ) {
-        return networks;
-      }
-
-      // Handle missing userId
-      if (!userId) {
-        if (isMounted.current) {
-          setInitialLoading(false);
-          setLoading(false);
-          setNetworks([]);
-          setError(null);
-        }
-        return [];
-      }
-
-      // Set fetch in progress flag
-      fetchInProgress.current = true;
-
-      // Set loading state
-      if (isMounted.current) {
-        if (initialLoading) {
-          // Keep initialLoading true
-        } else {
-          setLoading(true);
-        }
-      }
+    async (showLoadingState = false) => {
+      if (!userId) return;
 
       try {
-        const response = await axios.post(
-          `${apiUrl}/api/network/get-networks-names`,
-          {
-            userId,
-          }
-        );
+        if (showLoadingState) setLoading(true);
 
-        const fetched = Array.isArray(response.data) ? response.data : [];
-
-        // Check if component is still mounted
-        if (!isMounted.current) {
-          fetchInProgress.current = false;
-          return fetched;
-        }
-
-        // Update states
-
-        setNetworks(fetched);
-        setLastFetched(Date.now());
+        const response = await api.post("/api/network/get-networks-names", {
+          userId,
+        });
+        setNetworks(response.data || []);
         setError(null);
+      } catch (err) {
+        console.error("Error fetching networks:", err);
+        setError("Failed to load networks");
+        showToast("error", "Failed to load networks");
+      } finally {
         setLoading(false);
         setInitialLoading(false);
-
-        fetchInProgress.current = false;
-        return fetched;
-      } catch (err) {
-        console.error("Error fetching networks:", err.message);
-
-        if (isMounted.current) {
-          setError("Failed to load networks.");
-          setLoading(false);
-          setInitialLoading(false);
-        }
-
-        // Clear fetch in progress flag
-        fetchInProgress.current = false;
-        return [];
       }
     },
-    [userId, lastFetched, networks]
+    [userId, showToast]
   );
 
-  const deleteNetwork = useCallback(
-    async (networkID) => {
-      if (!networkID) {
-        showToast("error", "Invalid network ID");
-        return false;
-      }
-
-      setLoadingDelete(true);
-      const prevNetworks = [...networks];
-
-      try {
-        setNetworks((prev) => prev.filter((n) => n.id !== networkID));
-        await api.post("/network/delete-network", { networkID });
-        showToast("success", "Project deleted successfully!");
-        return true;
-      } catch (err) {
-        setNetworks(prevNetworks);
-        showToast("error", "Failed to delete project.");
-        return false;
-      } finally {
-        if (isMounted.current) setLoadingDelete(false);
-      }
-    },
-    [api, networks, showToast]
-  );
-
-  // Effect to fetch networks on initial mount - ONCE ONLY
+  // Initial fetch on mount
   useEffect(() => {
-    if (!userId || !isMounted.current) return;
+    if (userId) {
+      fetchNetworks();
+    }
+  }, [userId, fetchNetworks]);
 
-    // Only fetch if we don't already have networks
-    if (networks.length === 0) {
-      fetchNetworks(true).catch((err) => {
-        console.error("Error in initial fetch:", err.message);
-      });
+  // Delete network function
+  const deleteNetwork = async (networkId) => {
+    if (!networkId) {
+      showToast("error", "No network selected for deletion");
+      return false;
     }
 
-    // Empty dependency array means this effect runs once on mount
-  }, [userId]); // Only depend on userId, not fetchNetworks
+    try {
+      setLoadingDelete(true);
+
+      // Use correct parameter name - make sure this matches what your API expects
+      await api.post("/api/network/delete-network", { networkId });
+
+      // After successful deletion, refresh the networks list
+      await fetchNetworks();
+      return true;
+    } catch (err) {
+      console.error("Error deleting network:", err);
+      showToast("error", err.response?.data?.error || "Error deleting network");
+      return false;
+    } finally {
+      setLoadingDelete(false);
+    }
+  };
+
+  // Check if user has any networks
+  const hasNetworks = networks.length > 0;
 
   return {
     networks,
@@ -182,6 +81,6 @@ export const useNetworks = (userId) => {
     fetchNetworks,
     deleteNetwork,
     loadingDelete,
-    hasNetworks: networks.length > 0,
+    hasNetworks,
   };
 };

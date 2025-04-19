@@ -6,6 +6,8 @@ import { ProgressBar } from "./ProgressBar";
 import { AnalysisProgressOverlay } from "./ProgressBars/AnalysisProgressOverlay";
 import { useAuth } from "../context/authContext";
 import axios from "axios";
+import { useFormik } from "formik";
+import * as Yup from "yup";
 
 export default function ConfigureParametersFormStep({
   nextStep,
@@ -39,31 +41,43 @@ export default function ConfigureParametersFormStep({
     { name: "Saving Results", detail: "Storing network data in database..." },
   ];
 
-  const defaultParameters = {
-    projectName: "", // Default empty or you can set a default value
-    minParticipation: 2,
-    timeWindow: 60,
-    edgeWeight: "0.5",
-  };
+  // Initialize formik with proper validation
+  const formik = useFormik({
+    initialValues: {
+      projectName: formData.parameters?.projectName || "",
+      minParticipation: formData.parameters?.minParticipation || 2,
+      timeWindow: formData.parameters?.timeWindow || 60,
+      edgeWeight: formData.parameters?.edgeWeight || "0.5",
+    },
+    validationSchema: Yup.object({
+      projectName: Yup.string().trim().required("Project name is required"),
+      minParticipation: Yup.number()
+        .min(1, "Minimum participation must be at least 1")
+        .required("Minimum participation is required"),
+      timeWindow: Yup.number()
+        .min(1, "Time window must be at least 1 second")
+        .required("Time window is required"),
+      edgeWeight: Yup.number()
+        .min(0, "Edge weight must be at least 0")
+        .max(1, "Edge weight must be at most 1")
+        .required("Edge weight is required"),
+    }),
+    onSubmit: (values) => {
+      // Update formData with validated values
+      setFormData((prevData) => ({
+        ...prevData,
+        parameters: { ...values },
+      }));
 
-  const [parameters, setParameters] = useState({
-    ...defaultParameters,
-    ...formData.parameters, // Override default values if formData.parameters exists
+      // Start analysis
+      setTimeout(() => {
+        fetchDataFromAPI(values);
+      }, 0);
+    },
   });
 
-  // Ensure parameters are stored in formData when they change
-  useEffect(() => {
-    setFormData((prevData) => ({
-      ...prevData,
-      parameters,
-    }));
-  }, [parameters, setFormData]);
-
-  const parametersData = formData.parameters;
-  const csvFilee = formData.csvFile;
-
   // Save network data to the API
-  const saveNetwork = async (data) => {
+  const saveNetwork = async (data, parameters) => {
     // Update the analysis step to indicate we're saving the network
     setAnalysisStep(4);
 
@@ -142,7 +156,7 @@ export default function ConfigureParametersFormStep({
   };
 
   // Fetch data from the API and then save the network
-  const fetchDataFromAPI = async () => {
+  const fetchDataFromAPI = async (parameters) => {
     try {
       // Reset states for a new analysis
       setIsLoading(true);
@@ -153,58 +167,9 @@ export default function ConfigureParametersFormStep({
       setAnalysisStep(0);
       await simulateDelay(1000); // Show first step a bit longer
 
-      // Check if parameters are valid
-      if (!parameters.projectName) {
-        setErrorData({
-          status: "error",
-          error: {
-            stage: "parameter_parsing",
-            message: "Project name is required",
-          },
-        });
-        throw new Error("Project name is required");
-      }
+      // Validation is now handled by Formik, so we can skip the manual validation here
 
-      if (parameters.minParticipation < 1) {
-        setErrorData({
-          status: "error",
-          error: {
-            stage: "parameter_parsing",
-            message: "Minimum participation must be at least 1",
-          },
-        });
-        throw new Error("Minimum participation must be at least 1");
-      }
-
-      if (parameters.timeWindow < 1) {
-        setErrorData({
-          status: "error",
-          error: {
-            stage: "parameter_parsing",
-            message: "Time window must be at least 1 second",
-          },
-        });
-        throw new Error("Time window must be at least 1 second");
-      }
-
-      if (
-        parseFloat(parameters.edgeWeight) < 0 ||
-        parseFloat(parameters.edgeWeight) > 1
-      ) {
-        setErrorData({
-          status: "error",
-          error: {
-            stage: "parameter_parsing",
-            message: "Edge weight must be between 0 and 1",
-          },
-        });
-        throw new Error("Edge weight must be between 0 and 1");
-      }
-
-      const minParticipation = parametersData.minParticipation;
-      const timeWindow = parametersData.timeWindow;
-      const edgeWeight = parametersData.edgeWeight;
-      const csvFile = csvFilee;
+      const csvFile = formData.csvFile;
 
       // Step 2: Processing CSV file
       setAnalysisStep(1);
@@ -224,10 +189,10 @@ export default function ConfigureParametersFormStep({
       const requestUrl = `${apiUrl}/r/run-r`;
       const formDataToSend = new FormData();
       formDataToSend.append("input", csvFile);
-      formDataToSend.append("min_participation", minParticipation);
-      formDataToSend.append("time_window", timeWindow);
+      formDataToSend.append("min_participation", parameters.minParticipation);
+      formDataToSend.append("time_window", parameters.timeWindow);
       formDataToSend.append("subgraph", 1);
-      formDataToSend.append("edge_weight", edgeWeight);
+      formDataToSend.append("edge_weight", parameters.edgeWeight);
 
       // Step 3: Running algorithm
       setAnalysisStep(2);
@@ -284,7 +249,7 @@ export default function ConfigureParametersFormStep({
       }
 
       // Save the network data after successfully receiving it
-      const savedNetworkData = await saveNetwork(data);
+      const savedNetworkData = await saveNetwork(data, parameters);
 
       // Update formData with the network ID and data before proceeding to next step
       setFormData((prevData) => ({
@@ -398,28 +363,6 @@ export default function ConfigureParametersFormStep({
     return new Promise((resolve) => setTimeout(resolve, ms));
   };
 
-  // Handle input changes
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setParameters((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleNextStep = () => {
-    // Pass the updated parameters to formData
-    setFormData((prevData) => ({
-      ...prevData,
-      parameters: { ...parameters }, // Ensure the latest parameters are stored
-    }));
-
-    // Now you can safely update the CSV headers and proceed to the next step
-    setTimeout(() => {
-      fetchDataFromAPI();
-    }, 0);
-  };
-
   return (
     <div className="w-full h-[100vh] mx-auto p-4 flex flex-col bg-gray-100 overflow-auto space-y-6">
       {/* Analysis Progress Overlay */}
@@ -520,58 +463,130 @@ export default function ConfigureParametersFormStep({
             animate={{ opacity: 1, x: 0 }}
             className="md:col-span-3 bg-white rounded-xl shadow-lg p-6"
           >
-            <form className="w-full max-w-lg space-y-6">
-              {/* Add this new field at the top of the form */}
+            <form
+              onSubmit={formik.handleSubmit}
+              className="w-full max-w-lg space-y-6"
+            >
+              {/* Project Name Field */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-                <label className="text-sm font-medium md:col-span-1 md:text-right">
-                  Project Name :
+                <label
+                  htmlFor="projectName"
+                  className="text-sm font-medium md:col-span-1 md:text-right"
+                >
+                  Project Name:
                 </label>
-                <input
-                  type="text"
-                  name="projectName"
-                  value={parameters.projectName || ""}
-                  onChange={handleInputChange}
-                  className="p-2 border border-gray-300 shadow-md rounded-md text-center"
-                />
+                <div className="md:col-span-2">
+                  <input
+                    id="projectName"
+                    type="text"
+                    name="projectName"
+                    value={formik.values.projectName}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    className={`p-2 border ${
+                      formik.touched.projectName && formik.errors.projectName
+                        ? "border-red-500"
+                        : "border-gray-300"
+                    } shadow-md rounded-md text-center w-full`}
+                  />
+                  {formik.touched.projectName && formik.errors.projectName && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {formik.errors.projectName}
+                    </p>
+                  )}
+                </div>
               </div>
 
+              {/* Min Participation Field */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-                <label className="text-sm font-medium md:col-span-1 md:text-right">
-                  Minimum Participation :
+                <label
+                  htmlFor="minParticipation"
+                  className="text-sm font-medium md:col-span-1 md:text-right"
+                >
+                  Minimum Participation:
                 </label>
-                <input
-                  type="number"
-                  name="minParticipation"
-                  value={parameters.minParticipation}
-                  onChange={handleInputChange}
-                  className="p-2 border border-gray-300 shadow-md rounded-md text-center"
-                />
+                <div className="md:col-span-2">
+                  <input
+                    id="minParticipation"
+                    type="number"
+                    name="minParticipation"
+                    value={formik.values.minParticipation}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    className={`p-2 border ${
+                      formik.touched.minParticipation &&
+                      formik.errors.minParticipation
+                        ? "border-red-500"
+                        : "border-gray-300"
+                    } shadow-md rounded-md text-center w-full`}
+                  />
+                  {formik.touched.minParticipation &&
+                    formik.errors.minParticipation && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {formik.errors.minParticipation}
+                      </p>
+                    )}
+                </div>
               </div>
 
+              {/* Time Window Field */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-                <label className="text-sm font-medium md:col-span-1 md:text-right">
-                  Time Window (seconds) :
+                <label
+                  htmlFor="timeWindow"
+                  className="text-sm font-medium md:col-span-1 md:text-right"
+                >
+                  Time Window (seconds):
                 </label>
-                <input
-                  type="number"
-                  name="timeWindow"
-                  value={parameters.timeWindow}
-                  onChange={handleInputChange}
-                  className="p-2 border border-gray-300 shadow-md rounded-md text-center"
-                />
+                <div className="md:col-span-2">
+                  <input
+                    id="timeWindow"
+                    type="number"
+                    name="timeWindow"
+                    value={formik.values.timeWindow}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    className={`p-2 border ${
+                      formik.touched.timeWindow && formik.errors.timeWindow
+                        ? "border-red-500"
+                        : "border-gray-300"
+                    } shadow-md rounded-md text-center w-full`}
+                  />
+                  {formik.touched.timeWindow && formik.errors.timeWindow && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {formik.errors.timeWindow}
+                    </p>
+                  )}
+                </div>
               </div>
 
+              {/* Edge Weight Field */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-                <label className="text-sm font-medium md:col-span-1 md:text-right">
-                  Edge Weight :
+                <label
+                  htmlFor="edgeWeight"
+                  className="text-sm font-medium md:col-span-1 md:text-right"
+                >
+                  Edge Weight:
                 </label>
-                <input
-                  type="text"
-                  name="edgeWeight"
-                  value={parameters.edgeWeight}
-                  onChange={handleInputChange}
-                  className="p-2 border border-gray-300 shadow-md rounded-md text-center"
-                />
+                <div className="md:col-span-2">
+                  <input
+                    id="edgeWeight"
+                    type="text"
+                    name="edgeWeight"
+                    value={formik.values.edgeWeight}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    className={`p-2 border ${
+                      formik.touched.edgeWeight && formik.errors.edgeWeight
+                        ? "border-red-500"
+                        : "border-gray-300"
+                    } shadow-md rounded-md text-center w-full`}
+                  />
+                  {formik.touched.edgeWeight && formik.errors.edgeWeight && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {formik.errors.edgeWeight}
+                    </p>
+                  )}
+                </div>
               </div>
             </form>
           </motion.div>
@@ -592,10 +607,10 @@ export default function ConfigureParametersFormStep({
           </button>
 
           <button
-            disabled={isLoading}
-            onClick={handleNextStep}
+            disabled={isLoading || !formik.isValid}
+            onClick={formik.handleSubmit}
             className={`px-6 py-3 rounded-lg font-medium transition-all ${
-              isLoading
+              isLoading || !formik.isValid
                 ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                 : "bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:shadow-lg"
             }`}
@@ -606,7 +621,7 @@ export default function ConfigureParametersFormStep({
                 Processing...
               </div>
             ) : (
-              "Analyse "
+              "Analyse"
             )}
           </button>
         </motion.div>
