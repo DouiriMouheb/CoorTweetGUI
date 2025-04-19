@@ -77,7 +77,7 @@ export default function ConfigureParametersFormStep({
   });
 
   // Save network data to the API
-  const saveNetwork = async (data, parameters) => {
+  /*const saveNetwork = async (data, parameters) => {
     // Update the analysis step to indicate we're saving the network
     setAnalysisStep(4);
 
@@ -118,6 +118,237 @@ export default function ConfigureParametersFormStep({
       toast.error("Failed to save network.");
       throw error;
     }
+  };*/
+
+  // Save network data to the API
+  // Save network data to the API
+  const saveNetwork = async (data, parameters, token) => {
+    // Update the analysis step to indicate we're saving the network
+    setAnalysisStep(4);
+
+    const networkData = {
+      // Only send what the server controller is looking for
+      data: data,
+      networkName: parameters.projectName || "Test",
+      // Since the model requires these fields, include them even though the controller doesn't use them
+      minParticipation: parameters.minParticipation,
+      timeWindow: parameters.timeWindow,
+      edgeWeight: parameters.edgeWeight,
+    };
+
+    try {
+      const response = await axios.post(
+        `${apiUrl}/api/network/save-network`,
+        networkData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      toast.success("Network saved successfully");
+
+      // Store the network ID for navigation
+      setSavedNetworkId(response.data._id);
+
+      return response.data;
+    } catch (error) {
+      console.error("Error saving network:", error);
+      setErrorData({
+        status: "error",
+        error: {
+          stage: "saving_network",
+          message:
+            error.response?.data?.error ||
+            "Failed to save network data to database",
+        },
+      });
+      setAnalysisStatus("error");
+      toast.error("Failed to save network.");
+      throw error;
+    }
+  };
+
+  // Fetch data from the API and then save the network
+  const fetchDataFromAPI = async (parameters) => {
+    try {
+      // Reset states for a new analysis
+      setIsLoading(true);
+      setAnalysisStatus("processing");
+      setErrorData(null);
+
+      // Debug auth token
+      const userData = localStorage.getItem("user");
+      const token = userData ? JSON.parse(userData).token : null;
+      if (!token) {
+        console.error("No auth token found in localStorage");
+        setErrorData({
+          status: "error",
+          error: {
+            stage: "authentication",
+            message: "Authentication token missing. Please log in again.",
+          },
+        });
+        setAnalysisStatus("error");
+        toast.error("Authentication failed. Please log in again.");
+        return null;
+      }
+
+      // Step 1: Preparing data
+      setAnalysisStep(0);
+      await simulateDelay(1000);
+
+      const csvFile = formData.csvFile;
+
+      // Step 2: Processing CSV file
+      setAnalysisStep(1);
+      await simulateDelay(1500);
+
+      if (!csvFile) {
+        setErrorData({
+          status: "error",
+          error: {
+            stage: "file_access",
+            message: "No CSV file provided",
+          },
+        });
+        throw new Error("No CSV file provided");
+      }
+
+      const requestUrl = `${apiUrl}/r/run-r`;
+      const formDataToSend = new FormData();
+      formDataToSend.append("input", csvFile);
+      formDataToSend.append("min_participation", parameters.minParticipation);
+      formDataToSend.append("time_window", parameters.timeWindow);
+      formDataToSend.append("subgraph", 1);
+      formDataToSend.append("edge_weight", parameters.edgeWeight);
+
+      // Step 3: Running algorithm
+      setAnalysisStep(2);
+
+      // Use axios with token for authentication
+      const response = await axios.post(requestUrl, formDataToSend, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      // Axios auto-parses JSON
+      const data = response.data;
+
+      // Check if the response contains an error status from R script
+      if (data.status === "error") {
+        setErrorData(data);
+        if (data.error && data.error.stage) {
+          setAnalysisStep(mapErrorStageToStep(data.error.stage));
+        }
+        setAnalysisStatus("error");
+        throw new Error(data.error?.message || "Analysis failed");
+      }
+
+      // Step 4: Building network
+      setAnalysisStep(3);
+      await simulateDelay(1000);
+
+      // Check if data is valid
+      if (!data || Object.keys(data).length === 0) {
+        setErrorData({
+          status: "error",
+          error: {
+            stage: "network_generation",
+            message: "No valid network data was generated",
+          },
+        });
+        throw new Error("No valid network data was generated");
+      }
+
+      // Save the network data with the token
+      const savedNetworkData = await saveNetwork(data, parameters, token);
+
+      // Update formData with the network ID and data
+      setFormData((prevData) => ({
+        ...prevData,
+        networkId: savedNetworkData._id,
+        networkData: savedNetworkData,
+      }));
+
+      // Complete all steps before showing success state
+      await simulateDelay(1000);
+
+      // Set the analysis as complete to trigger the success state
+      setAnalysisStatus("success");
+
+      return data;
+    } catch (error) {
+      console.error("Error during analysis:", error);
+
+      // If errorData is not already set, create appropriate error structure
+      if (!errorData) {
+        // Create error data based on the current step
+        switch (analysisStep) {
+          case 0:
+            setErrorData({
+              status: "error",
+              error: {
+                stage: "parameter_parsing",
+                message: `Parameter error: ${error.message}`,
+              },
+            });
+            break;
+          case 1:
+            setErrorData({
+              status: "error",
+              error: {
+                stage: "file_reading",
+                message: `CSV processing error: ${error.message}`,
+              },
+            });
+            break;
+          case 2:
+            setErrorData({
+              status: "error",
+              error: {
+                stage: "detect_groups",
+                message: `Algorithm error: ${error.message}`,
+              },
+            });
+            break;
+          case 3:
+            setErrorData({
+              status: "error",
+              error: {
+                stage: "network_generation",
+                message: `Network construction error: ${error.message}`,
+              },
+            });
+            break;
+          case 4:
+            setErrorData({
+              status: "error",
+              error: {
+                stage: "output_preparation",
+                message: `Saving error: ${error.message}`,
+              },
+            });
+            break;
+          default:
+            setErrorData({
+              status: "error",
+              error: {
+                stage: "unknown",
+                message: `Error: ${error.message}`,
+              },
+            });
+        }
+      }
+
+      setAnalysisStatus("error");
+      toast.error(error.message);
+      return null;
+    }
   };
 
   // Map R script error stages to UI steps
@@ -156,7 +387,7 @@ export default function ConfigureParametersFormStep({
   };
 
   // Fetch data from the API and then save the network
-  const fetchDataFromAPI = async (parameters) => {
+  /*const fetchDataFromAPI = async (parameters) => {
     try {
       // Reset states for a new analysis
       setIsLoading(true);
@@ -335,7 +566,7 @@ export default function ConfigureParametersFormStep({
       toast.error(error.message);
       return null;
     }
-  };
+  };*/
 
   // Handle completion of the success or error state and cleanup
   const handleAnalysisFinished = () => {

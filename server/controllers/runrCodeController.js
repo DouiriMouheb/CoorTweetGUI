@@ -58,12 +58,12 @@ const runrCode = async (req, res) => {
 
     try {
       const resultJson = JSON.parse(stdoutData);
-      //await cleanupFile(filePath);
+      await cleanupFile(filePath);
       return res.json(resultJson);
     } catch (stdoutError) {
       console.error("Failed to parse R stdout as JSON:", stdoutError);
 
-      // await cleanupFile(filePath);
+      await cleanupFile(filePath);
 
       // Existing error handling...
       if (stderrData) {
@@ -92,7 +92,7 @@ const runrCode = async (req, res) => {
   // Handle any errors spawning the R process
   rProcess.on("error", async (error) => {
     console.error("Failed to start R process:", error);
-    //await cleanupFile(filePath);
+    await cleanupFile(filePath);
 
     return res.status(500).json({
       status: "error",

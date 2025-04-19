@@ -1,12 +1,21 @@
 const Network = require("../models/network");
 
 // Save network data
+// Save network data
 const saveNetwork = async (req, res) => {
-  const { data, networkName } = req.body;
+  const { data, networkName, minParticipation, timeWindow, edgeWeight } =
+    req.body;
   const userId = req.user._id; // Get userId from authenticated user
 
   try {
-    const network = await Network.create({ userId, data, networkName });
+    const network = await Network.create({
+      userId,
+      data,
+      networkName,
+      minParticipation,
+      timeWindow,
+      edgeWeight,
+    });
     res.status(201).json(network);
   } catch (error) {
     res.status(400).json({ error: error.message });
