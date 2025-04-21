@@ -166,7 +166,7 @@ export default function ConfigureParametersFormStep({
         },
       });
       setAnalysisStatus("error");
-      toast.error("Failed to save network.");
+      //toast.error("Failed to save network.");
       throw error;
     }
   };
@@ -294,7 +294,7 @@ export default function ConfigureParametersFormStep({
               status: "error",
               error: {
                 stage: "parameter_parsing",
-                message: `Parameter error: ${error.message}`,
+                message: `${error.message}`,
               },
             });
             break;
@@ -346,7 +346,7 @@ export default function ConfigureParametersFormStep({
       }
 
       setAnalysisStatus("error");
-      toast.error(error.message);
+      //toast.error(error.message);
       return null;
     }
   };
@@ -570,7 +570,7 @@ export default function ConfigureParametersFormStep({
 
   // Handle completion of the success or error state and cleanup
   const handleAnalysisFinished = () => {
-    console.log("Analysis finished with status:", analysisStatus);
+    //console.log("Analysis finished with status:", analysisStatus);
 
     // Reset only the loading state - keep other states intact until explicitly changed
     setIsLoading(false);

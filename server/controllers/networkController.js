@@ -28,10 +28,32 @@ const getNetworks = async (req, res) => {
 
   try {
     const network = await Network.find({ userId });
-    if (!network || network.length === 0) {
-      return res.status(404).json({ error: "Networks not found" });
+    // Return empty array instead of 404 error when no networks found
+    return res.status(200).json(network);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+// get network names for each user
+const getNetworkNames = async (req, res) => {
+  const userId = req.user._id; // Get userId from authenticated user
+
+  try {
+    const networks = await Network.find({ userId });
+
+    // Return empty array instead of 404 error when no networks found
+    if (!networks) {
+      return res.status(200).json([]);
     }
-    res.status(200).json(network);
+
+    // Create an array of objects with both name and id
+    const networkData = networks.map((network) => ({
+      id: network._id,
+      name: network.networkName,
+    }));
+
+    res.status(200).json(networkData);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -48,29 +70,6 @@ const getNetwork = async (req, res) => {
       return res.status(404).json({ error: "Network not found" });
     }
     res.status(200).json(network);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-};
-
-// get network names for each user
-const getNetworkNames = async (req, res) => {
-  const userId = req.user._id; // Get userId from authenticated user
-
-  try {
-    const networks = await Network.find({ userId });
-
-    if (!networks || networks.length === 0) {
-      return res.status(404).json({ error: "Networks not found" });
-    }
-
-    // Create an array of objects with both name and id
-    const networkData = networks.map((network) => ({
-      id: network._id,
-      name: network.networkName,
-    }));
-
-    res.status(200).json(networkData);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }

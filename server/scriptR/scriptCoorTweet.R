@@ -85,7 +85,7 @@ result <- tryCatch(
 
 # Check if any coordinated behavior was detected
 if (nrow(result) == 0) {
-    handle_error("no_coordination", "No coordinated behavior detected with the specified parameters.")
+    handle_error("no_coordination", "No coordinated behavior detected.")
 }
 
 # Generate the coordinated network graph with error handling

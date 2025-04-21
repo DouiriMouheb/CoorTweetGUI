@@ -11,6 +11,7 @@ import ObjectIDSourceSelector from "./ui/ObjectIDSourceSelector";
 import PlatformInfo from "./ui/PlatformInfo";
 import StepIndicator from "./ui/StepIndicator";
 import { ProgressBar } from "../ProgressBar";
+import PrepareDataset from "./PrepareDataset"; // Import the PrepareDataset component
 
 // Main component
 export default function PlatformSelectorStep({
@@ -22,23 +23,31 @@ export default function PlatformSelectorStep({
   const [isLoading, setIsLoading] = useState(false);
   const [disableButton, setIsDisabled] = useState(false);
   const [selectedPlatform, setSelectedPlatform] = useState("");
+  const [showCustomHeaderUI, setShowCustomHeaderUI] = useState(false);
 
   // Detect platform from headers
   useEffect(() => {
     if (formData.csvHeaders && formData.csvHeaders.length > 0) {
       const detectedPlatform = identifyDataSource(formData.csvHeaders);
       setSelectedPlatform(detectedPlatform);
-      // Update formData with detected platform
-      setFormData((prev) => ({
-        ...prev,
-        platform: detectedPlatform,
-      }));
 
-      // Auto-select account sources for platforms with only one option
-      autoSelectSources(detectedPlatform);
+      // Show custom header UI if platform is OTHER
+      if (detectedPlatform === PLATFORMS.OTHER) {
+        setShowCustomHeaderUI(true);
+      } else {
+        setShowCustomHeaderUI(false);
+        // Update formData with detected platform
+        setFormData((prev) => ({
+          ...prev,
+          platform: detectedPlatform,
+        }));
+
+        // Auto-select account sources for platforms with only one option
+        autoSelectSources(detectedPlatform);
+      }
     }
   }, [formData.csvHeaders]);
-  useEffect(() => {}, [selectedPlatform]);
+
   // Auto-select sources for certain platforms
   const autoSelectSources = useCallback((platform) => {
     if (
@@ -258,17 +267,228 @@ export default function PlatformSelectorStep({
     processCSVWithChunking,
   ]);
 
+  // Handle proceeding to next step with custom headers (for unknown platform)
+  const handleCustomHeaderNext = () => {
+    // If we have updatedHeaders from the PrepareDataset component, we're good to go
+    if (formData.updatedHeaders && formData.updatedHeaders.length > 0) {
+      // Process the custom mapped headers
+      processCustomMappedCSV()
+        .then(() => nextStep())
+        .catch((err) => {
+          console.error("Failed to process custom mapped CSV:", err);
+          toast.error("Failed to update CSV. Please try again.");
+        });
+    } else {
+      toast.error("Please select and configure at least one column");
+    }
+  };
+
+  // Process CSV with custom header mapping
+  const processCustomMappedCSV = useCallback(async () => {
+    const file = formData.csvFile;
+
+    if (!file) {
+      toast.error("Missing CSV file.");
+      return Promise.reject(new Error("Missing CSV file"));
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Read the CSV file
+      const text = await file.text();
+      const result = Papa.parse(text, { header: true, skipEmptyLines: true });
+
+      // Map columns according to user selections
+      const transformedData = result.data
+        .map((row) => {
+          try {
+            // Create a new row with the standardized format
+            const newRow = {
+              account_id: "",
+              content_id: "",
+              object_id: "",
+              timestamp_share: 0,
+            };
+
+            // Apply the user's column mappings
+            formData.updatedHeaders.forEach((mapping) => {
+              const originalHeader = formData.csvHeaders[mapping.index];
+              const newHeader = mapping.newName;
+
+              // If the new header is one of our required fields, use it
+              if (
+                [
+                  "account_id",
+                  "content_id",
+                  "object_id",
+                  "timestamp_share",
+                ].includes(newHeader)
+              ) {
+                // For timestamp, attempt to convert to Unix timestamp if it's a date
+                if (
+                  newHeader === "timestamp_share" &&
+                  isNaN(row[originalHeader])
+                ) {
+                  newRow[newHeader] = Math.floor(
+                    new Date(row[originalHeader]).getTime() / 1000
+                  );
+                } else {
+                  newRow[newHeader] = row[originalHeader];
+                }
+              }
+            });
+
+            // Check if we have the required fields
+            if (newRow.account_id && newRow.content_id) {
+              return newRow;
+            }
+
+            return null;
+          } catch (err) {
+            console.warn("Error processing row:", err);
+            return null;
+          }
+        })
+        .filter((row) => row !== null);
+
+      if (transformedData.length === 0) {
+        toast.error(
+          "No valid data rows could be processed. Please check your column mappings."
+        );
+        setIsLoading(false);
+        return Promise.reject(new Error("No valid data rows"));
+      }
+
+      // Generate CSV
+      const csvContent = Papa.unparse(transformedData);
+      const estimatedSizeMB = new Blob([csvContent]).size / (1024 * 1024);
+
+      const updatedCsvBlob = new Blob([csvContent], {
+        type: "text/csv;charset=utf-8;",
+      });
+
+      setFormData((prevData) => ({
+        ...prevData,
+        csvFile: updatedCsvBlob, // Replace with the updated file
+        platform: PLATFORMS.PREPROCESSED, // Mark as preprocessed now
+      }));
+
+      if (estimatedSizeMB > 15) {
+        toast.error(
+          `Warning: The transformed file size (${estimatedSizeMB.toFixed(
+            1
+          )}MB) exceeds the 15MB limit of the Coordinated Sharing Detection Service.`
+        );
+      }
+
+      return Promise.resolve();
+    } catch (err) {
+      console.error("Processing error:", err);
+      toast.error(`Error processing CSV: ${err.message}`);
+      return Promise.reject(err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [formData.csvFile, formData.csvHeaders, formData.updatedHeaders]);
+
   // Render platform detection message
   const getPlatformMessage = () => {
     if (selectedPlatform === PLATFORMS.PREPROCESSED) {
       return "Great, your DataSet is preprocessed correctly and ready to use.";
     } else if (selectedPlatform === PLATFORMS.OTHER) {
-      return "We couldn't identify your data format automatically. Please check your CSV file.";
+      return "We couldn't identify your data format automatically. Please map your columns manually.";
     } else {
       return `We detected that your data is imported from ${selectedPlatform}.`;
     }
   };
 
+  // Function to set progress (stub to avoid errors with missing function)
+  const setProgress = (progress) => {
+    // This is just a stub - in a real implementation you'd have a progress state
+    console.log(`Processing progress: ${progress}%`);
+  };
+
+  // If showing custom header UI, render the PrepareDataset component
+  if (showCustomHeaderUI) {
+    return (
+      <div className="w-full h-[100vh] mx-auto p-4 flex flex-col bg-gray-100 overflow-auto space-y-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-6xl mx-auto space-y-8"
+        >
+          {/* Header Section */}
+          <div className="text-center space-y-4">
+            <motion.h1
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-3xl font-bold bg-[#00926c] bg-clip-text text-transparent"
+            >
+              Coordinated Sharing Behavior Detection
+            </motion.h1>
+
+            <div className="flex items-center justify-center gap-4">
+              <div className="px-4 py-2 bg-blue-100 text-blue-600 rounded-full font-medium flex items-center">
+                <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-2">
+                  2
+                </span>
+                Custom Dataset Preparation
+              </div>
+            </div>
+          </div>
+
+          {/* Progress Indicator */}
+          <ProgressBar currentStep={2} totalSteps={3} />
+
+          {/* Custom Header Mapping Component */}
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="mb-6">
+              <p className="text-sm text-gray-600 mb-4">
+                We couldn't automatically recognize your CSV format. Please map
+                your columns to our required fields:
+              </p>
+              <ul className="list-disc pl-5 mb-4 text-sm text-gray-600">
+                <li>
+                  <strong>account_id</strong> - Identifier for the account that
+                  shared the content
+                </li>
+                <li>
+                  <strong>content_id</strong> - Unique identifier for the
+                  specific post/content
+                </li>
+                <li>
+                  <strong>object_id</strong> - The content being shared (URL,
+                  text, etc.)
+                </li>
+                <li>
+                  <strong>timestamp_share</strong> - When the content was shared
+                </li>
+              </ul>
+            </div>
+
+            <PrepareDataset
+              nextStep={handleCustomHeaderNext}
+              prevStep={prevStep}
+              formData={formData}
+              setFormData={setFormData}
+            />
+
+            {isLoading && (
+              <div className="flex justify-center items-center mt-4">
+                <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
+                <span className="ml-3 text-blue-500">
+                  Processing your data...
+                </span>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Regular platform selector UI (for known platforms)
   return (
     <div className="w-full h-[100vh] mx-auto p-4 flex flex-col bg-gray-100 overflow-auto space-y-6">
       <motion.div

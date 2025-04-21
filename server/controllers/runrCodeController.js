@@ -50,12 +50,9 @@ const runrCode = async (req, res) => {
   // Collect stderr data
   rProcess.stderr.on("data", (data) => {
     stderrData += data.toString();
-    console.error(`R Error: ${data.toString()}`);
   });
 
   rProcess.on("close", async (code) => {
-    console.log(`R script finished with exit code: ${code}`);
-
     try {
       const resultJson = JSON.parse(stdoutData);
       await cleanupFile(filePath);

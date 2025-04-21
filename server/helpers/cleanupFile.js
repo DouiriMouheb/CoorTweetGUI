@@ -11,7 +11,6 @@ async function cleanupFile(filePath) {
   try {
     await fs.access(filePath); // Check if file exists
     await fs.unlink(filePath);
-    console.log(`Successfully deleted uploaded file: ${filePath}`);
   } catch (err) {
     // Only log as error if it's not a "file doesn't exist" error
     if (err.code !== "ENOENT") {

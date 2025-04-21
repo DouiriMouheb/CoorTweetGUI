@@ -248,15 +248,11 @@ export const AnalysisProgressOverlay = ({
                 <div className="mt-6 p-4 bg-red-50 border border-red-100 rounded-lg">
                   <div className="flex items-start">
                     <AlertTriangle className="w-5 h-5 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-red-700">
-                      {errorData && errorData.error && errorData.error.stage
-                        ? `Error occurred during: ${
-                            steps[currentStep]?.name || "Unknown stage"
-                          }`
-                        : "Please check your parameters and try again later."}
-                    </p>
+                    <p className="text-sm text-red-700">{getErrorMessage()}</p>
                   </div>
                 </div>
+
+                {/* You can also add information about the specific error stage */}
 
                 {/*        <motion.p
                   initial={{ opacity: 0 }}
