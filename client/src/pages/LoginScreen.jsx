@@ -13,6 +13,7 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 
 const LoginScreen = () => {
+  const apiUrl = import.meta.env.VITE_API_URL;
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const { login, error, isLoading } = useLogin();
@@ -171,7 +172,8 @@ const LoginScreen = () => {
       setIsResetting(true);
 
       const response = await fetch(
-        "http://localhost:5000/api/user/forgot-password",
+        `${apiUrl}/api/user/forgot-password`,
+
         {
           method: "POST",
           headers: {

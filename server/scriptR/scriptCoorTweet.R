@@ -1,3 +1,6 @@
+# First, load jsonlite without error handling
+library(jsonlite)
+
 # Create a function to handle errors by returning them in JSON format
 handle_error <- function(stage, message) {
     error_output <- list(
@@ -11,12 +14,11 @@ handle_error <- function(stage, message) {
     q(status = 0) # Exit with status 0 so the JSON is properly returned
 }
 
-# Load necessary libraries with error checking
+# Load remaining necessary libraries with error checking
 tryCatch(
     {
         library(httr)
         library(CooRTweet)
-        library(jsonlite)
         library(igraph)
     },
     error = function(e) {
@@ -101,11 +103,6 @@ graph <- tryCatch(
         handle_error("network_generation", paste("Error generating coordinated network:", e$message))
     }
 )
-
-# Ensure graph is not empty (nodes)
-# if (vcount(graph) == 0) {
-#    handle_error("empty_graph_nodes", "The generated graph has no nodes. Try decreasing the subgraph parameter.")
-# }
 
 # Ensure graph is not empty (edges)
 if (ecount(graph) == 0) {

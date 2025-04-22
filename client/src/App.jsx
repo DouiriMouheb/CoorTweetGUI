@@ -14,7 +14,7 @@ import NetworkScreen from "./components/NetworkScreen"; // Use the correct path 
 import { AuthContextProvider, useAuth } from "./context/authContext";
 import Signup from "./pages/SignUp";
 import ProtectedRoute from "./components/ProtectedRoute";
-import AuthGuard from "./context/AuthGuard";
+import AuthGuard from "./context/authGuard";
 
 // Initialize API service with interceptors
 import "./services/api";

@@ -2,7 +2,8 @@
 const User = require("../models/user");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
+
 const validator = require("validator");
 const { createPasswordResetHTML } = require("../helpers/emailTemplates");
 // Configure email transporter
@@ -14,6 +15,7 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASSWORD,
   },
 });
+//*** */
 
 // Request password reset
 /*const forgotPassword = async (req, res) => {
