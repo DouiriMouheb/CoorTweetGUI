@@ -3,8 +3,9 @@ import { toast } from "react-hot-toast";
 import { isTokenExpired } from "../utils/authUtils";
 
 // Create axios instance with default config
+const apiUrl = import.meta.env.VITE_API_URL;
 const api = axios.create({
-  baseURL: "http://localhost:5000",
+  baseURL: apiUrl,
   withCredentials: true,
   timeout: 100000, // 10 seconds timeout
 });

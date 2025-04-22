@@ -12,6 +12,7 @@ import * as Yup from "yup";
 import { useFormik } from "formik";
 
 export default function UserProfile({ onUpdate }) {
+  const apiUrl = import.meta.env.VITE_API_URL;
   const { user } = useAuth();
   const { showToast } = useToast();
   const [email, setEmail] = useState(user.email);
@@ -95,22 +96,19 @@ export default function UserProfile({ onUpdate }) {
         const userId = getUserId();
         if (!userId) return;
 
-        const response = await fetch(
-          "http://localhost:5000/api/user/update-password",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-            body: JSON.stringify({
-              userId: userId,
-              currentPassword: values.currentPassword,
-              newPassword: values.newPassword,
-            }),
-            credentials: "include",
-          }
-        );
+        const response = await fetch(`${apiUrl}/api/user/update-password`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({
+            userId: userId,
+            currentPassword: values.currentPassword,
+            newPassword: values.newPassword,
+          }),
+          credentials: "include",
+        });
 
         const data = await response.json();
 

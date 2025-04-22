@@ -1,0 +1,60 @@
+name: CoorTweet-app
+x-build-dns: &build-dns
+  dns:
+    - 8.8.8.8
+    - 8.8.4.4
+services:
+  api:
+    build:
+      context: ./server
+      target: development
+    restart: unless-stopped
+    env_file:
+      - ./server/.env
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    networks:
+      - coortweet
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+
+  client:
+    build:
+      context: ./client
+      target: development
+      args:
+        - VITE_API_URL=https://api.auth.localhost
+    restart: unless-stopped
+    env_file:
+      - ./client/.env
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    networks:
+      - coortweet
+    command: npm run dev -- --host
+    depends_on:
+      - api
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./caddy/Caddyfile.dev:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - coortweet
+    depends_on:
+      - client
+
+volumes:
+  caddy_data:
+  caddy_config:
+networks:
+  coortweet:
+    driver: bridge
