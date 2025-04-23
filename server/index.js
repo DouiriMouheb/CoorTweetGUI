@@ -22,7 +22,7 @@ mongoose
 // With just this one configuration:
 app.use(
   cors({
-    origin: ["https://auth.localhost", "http://192.168.43.205:5173"], // Note: array syntax and no trailing slash
+    origin: ["https://douirilabs.studio", "http://192.168.43.205:5173"], // Note: array syntax and no trailing slash
     credentials: true, // Allow cookies to be sent
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
