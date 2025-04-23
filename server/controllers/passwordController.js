@@ -1,20 +1,13 @@
 // controllers/passwordController.js
 const User = require("../models/user");
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
-
 const validator = require("validator");
 const { createPasswordResetHTML } = require("../helpers/emailTemplates");
-// Configure email transporter
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: process.env.EMAIL_PORT,
-  auth: {
-    user: process.env.EMAIL_USERNAME,
-    pass: process.env.EMAIL_PASSWORD,
-  },
-});
+
+// Initialize Resend with your API key
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const forgotPassword = async (req, res) => {
   try {
@@ -39,7 +32,7 @@ const forgotPassword = async (req, res) => {
       const timeRemaining = Math.ceil((resetCooldown - timeElapsed) / 60000); // Convert to minutes
 
       return res.status(429).json({
-        error: `New password was already sent to your Email Please wait ${timeRemaining} minutes before requesting another password reset.`,
+        error: `New password was already sent to your Email. Please wait ${timeRemaining} minutes before requesting another password reset.`,
       });
     }
 
@@ -54,15 +47,22 @@ const forgotPassword = async (req, res) => {
     user.password = await bcrypt.hash(newPassword, salt);
     await user.save();
 
-    // Send email with the new password
-    const mailOptions = {
-      from: process.env.EMAIL_FROM,
+    // Send email with the new password using Resend
+    const { data, error } = await resend.emails.send({
+      from: process.env.EMAIL_FROM || "onboarding@resend.dev",
       to: user.email,
       subject: "Your New Password",
-      text: `Your password has been reset. Your new password is: ${newPassword}\n\nFor security reasons, please change this password after logging in.`, // Plain text version
-      html: createPasswordResetHTML(newPassword), // HTML version
-    };
-    await transporter.sendMail(mailOptions);
+      text: `Your password has been reset. Your new password is: ${newPassword}\n\nFor security reasons, please change this password after logging in.`,
+      html: createPasswordResetHTML(newPassword),
+    });
+
+    if (error) {
+      console.error("Email sending failed:", error);
+      return res.status(500).json({
+        status: "error",
+        error: "Failed to send password reset email",
+      });
+    }
 
     res.status(200).json({
       status: "success",
@@ -76,6 +76,7 @@ const forgotPassword = async (req, res) => {
     });
   }
 };
+
 // Function to generate a secure random password
 const generateSecurePassword = () => {
   const length = 12;
@@ -90,7 +91,8 @@ const generateSecurePassword = () => {
 
   return password;
 };
-// controllers/userController.js or wherever appropriate
+
+// Update password function
 const updatePassword = async (req, res) => {
   try {
     const { userId, currentPassword, newPassword } = req.body;
