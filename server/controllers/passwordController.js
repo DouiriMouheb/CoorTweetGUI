@@ -1,10 +1,11 @@
 // controllers/passwordController.js
 const User = require("../models/user");
 const nodemailer = require("nodemailer");
-const crypto = require("crypto");
+const { Resend } = require("resend");
 const bcrypt = require("bcryptjs");
 
 const validator = require("validator");
+const resend = new Resend(process.env.RESEND_API_KEY);
 const { createPasswordResetHTML } = require("../helpers/emailTemplates");
 // Configure email transporter
 const transporter = nodemailer.createTransport({
@@ -59,7 +60,7 @@ const transporter = nodemailer.createTransport({
     });
   }
 };*/
-const forgotPassword = async (req, res) => {
+/*const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
 
@@ -118,7 +119,78 @@ const forgotPassword = async (req, res) => {
       error: "Error resetting password. Please try again later.",
     });
   }
+};*/
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    // Find user by email
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ error: "No user found with that email" });
+    }
+
+    // Check if the user has recently requested a password reset
+    const resetCooldown = 60 * 60 * 1000; // 1 hour in milliseconds
+    if (
+      user.lastPasswordResetRequest &&
+      Date.now() - new Date(user.lastPasswordResetRequest).getTime() <
+        resetCooldown
+    ) {
+      // Calculate time remaining before next request is allowed
+      const timeElapsed =
+        Date.now() - new Date(user.lastPasswordResetRequest).getTime();
+      const timeRemaining = Math.ceil((resetCooldown - timeElapsed) / 60000);
+
+      return res.status(429).json({
+        error: `New password was already sent to your Email. Please wait ${timeRemaining} minutes before requesting another password reset.`,
+      });
+    }
+
+    // Update last request timestamp
+    user.lastPasswordResetRequest = new Date();
+
+    // Generate a new random password
+    const newPassword = generateSecurePassword();
+
+    // Update the user's password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    await user.save();
+
+    // Send email with the new password using Resend
+    try {
+      const { data, error } = await resend.emails.send({
+        from: process.env.EMAIL_FROM || "onboarding@resend.dev",
+        to: user.email,
+        subject: "Your New Password",
+        html: createPasswordResetHTML(newPassword),
+      });
+
+      if (error) {
+        console.error("Email sending error:", error);
+        throw new Error(error.message);
+      }
+
+      console.log("Email sent successfully with ID:", data.id);
+    } catch (emailError) {
+      console.error("Failed to send email:", emailError);
+      throw emailError;
+    }
+
+    res.status(200).json({
+      status: "success",
+      message: "New password sent to email",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      status: "error",
+      error: "Error resetting password. Please try again later.",
+    });
+  }
 };
+
 // Function to generate a secure random password
 const generateSecurePassword = () => {
   const length = 12;

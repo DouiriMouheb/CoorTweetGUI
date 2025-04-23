@@ -7,6 +7,9 @@ services:
       target: production
     restart: unless-stopped
     env_file: ./server/.env
+    environment:
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - EMAIL_FROM=${EMAIL_FROM}
     networks:
       - coortweet
 
