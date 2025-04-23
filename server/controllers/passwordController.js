@@ -15,50 +15,7 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASSWORD,
   },
 });
-//*** */
 
-// Request password reset
-/*const forgotPassword = async (req, res) => {
-  try {
-    const { email } = req.body;
-
-    // Find user by email
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ error: "No user found with that email" });
-    }
-
-    // Generate a new random password
-    const newPassword = generateSecurePassword();
-
-    // Update the user's password
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(newPassword, salt);
-    await user.save();
-
-    // Send email with the new password
-    const mailOptions = {
-      from: process.env.EMAIL_FROM,
-      to: user.email,
-      subject: "Your New Password",
-      text: `Your password has been reset. Your new password is: ${newPassword}\n\nFor security reasons, please change this password after logging in.`, // Plain text version
-      html: createPasswordResetHTML(newPassword), // HTML version
-    };
-
-    await transporter.sendMail(mailOptions);
-
-    res.status(200).json({
-      status: "success",
-      message: "New password sent to email",
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      status: "error",
-      error: "Error resetting password. Please try again later.",
-    });
-  }
-};*/
 const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
@@ -176,29 +133,7 @@ const updatePassword = async (req, res) => {
   }
 };
 
-// Reset password
-/*const resetPassword = async (req, res) => {
-  try {
-    const { token } = req.params;
-    const { password } = req.body;
-
-    // Use the static method to reset password
-    await User.resetPassword(token, password);
-
-    res.status(200).json({
-      status: "success",
-      message: "Password reset successful",
-    });
-  } catch (error) {
-    res.status(400).json({
-      status: "error",
-      error: error.message,
-    });
-  }
-};*/
-
 module.exports = {
   forgotPassword,
   updatePassword,
-  //resetPassword,
 };
