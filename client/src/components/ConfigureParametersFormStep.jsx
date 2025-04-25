@@ -77,51 +77,6 @@ export default function ConfigureParametersFormStep({
   });
 
   // Save network data to the API
-  /*const saveNetwork = async (data, parameters) => {
-    // Update the analysis step to indicate we're saving the network
-    setAnalysisStep(4);
-
-    const networkData = {
-      userId: user.userId,
-      data: data,
-      networkName: parameters.projectName || "Test",
-      minParticipation: parameters.minParticipation,
-      timeWindow: parameters.timeWindow,
-      edgeWeight: parameters.edgeWeight,
-    };
-
-    try {
-      const response = await axios.post(
-        `${apiUrl}/api/network/save-network`,
-        networkData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      toast.success("Network saved successfully");
-
-      // Return the network ID or the entire response data
-      return response.data;
-    } catch (error) {
-      console.error("Error saving network:", error);
-      setErrorData({
-        status: "error",
-        error: {
-          stage: "saving_network",
-          message: "Failed to save network data to database",
-        },
-      });
-      setAnalysisStatus("error");
-      toast.error("Failed to save network.");
-      throw error;
-    }
-  };*/
-
-  // Save network data to the API
-  // Save network data to the API
   const saveNetwork = async (data, parameters, token) => {
     // Update the analysis step to indicate we're saving the network
     setAnalysisStep(4);
@@ -386,192 +341,8 @@ export default function ConfigureParametersFormStep({
       : analysisStep;
   };
 
-  // Fetch data from the API and then save the network
-  /*const fetchDataFromAPI = async (parameters) => {
-    try {
-      // Reset states for a new analysis
-      setIsLoading(true);
-      setAnalysisStatus("processing");
-      setErrorData(null);
-
-      // Step 1: Preparing data
-      setAnalysisStep(0);
-      await simulateDelay(1000); // Show first step a bit longer
-
-      // Validation is now handled by Formik, so we can skip the manual validation here
-
-      const csvFile = formData.csvFile;
-
-      // Step 2: Processing CSV file
-      setAnalysisStep(1);
-      await simulateDelay(1500);
-
-      if (!csvFile) {
-        setErrorData({
-          status: "error",
-          error: {
-            stage: "file_access",
-            message: "No CSV file provided",
-          },
-        });
-        throw new Error("No CSV file provided");
-      }
-
-      const requestUrl = `${apiUrl}/r/run-r`;
-      const formDataToSend = new FormData();
-      formDataToSend.append("input", csvFile);
-      formDataToSend.append("min_participation", parameters.minParticipation);
-      formDataToSend.append("time_window", parameters.timeWindow);
-      formDataToSend.append("subgraph", 1);
-      formDataToSend.append("edge_weight", parameters.edgeWeight);
-
-      // Step 3: Running algorithm
-      setAnalysisStep(2);
-
-      const response = await fetch(requestUrl, {
-        method: "POST",
-        body: formDataToSend,
-      });
-
-      if (!response.ok) {
-        setErrorData({
-          status: "error",
-          error: {
-            stage: "network_generation",
-            message: `Server error: ${response.status} ${response.statusText}`,
-          },
-        });
-        throw new Error(
-          `Server error: ${response.status} ${response.statusText}`
-        );
-      }
-
-      // Parse the JSON response
-      const data = await response.json();
-
-      // Check if the response contains an error status from R script
-      if (data.status === "error") {
-        // Set error data from R script
-        setErrorData(data);
-
-        // Set the step based on the error stage
-        if (data.error && data.error.stage) {
-          setAnalysisStep(mapErrorStageToStep(data.error.stage));
-        }
-
-        setAnalysisStatus("error");
-        throw new Error(data.error?.message || "Analysis failed");
-      }
-
-      // Step 4: Building network
-      setAnalysisStep(3);
-      await simulateDelay(1000);
-
-      // Check if data is valid
-      if (!data || Object.keys(data).length === 0) {
-        setErrorData({
-          status: "error",
-          error: {
-            stage: "network_generation",
-            message: "No valid network data was generated",
-          },
-        });
-        throw new Error("No valid network data was generated");
-      }
-
-      // Save the network data after successfully receiving it
-      const savedNetworkData = await saveNetwork(data, parameters);
-
-      // Update formData with the network ID and data before proceeding to next step
-      setFormData((prevData) => ({
-        ...prevData,
-        networkId: savedNetworkData._id,
-        networkData: savedNetworkData,
-      }));
-
-      // Store the network ID for navigation
-      setSavedNetworkId(savedNetworkData._id);
-
-      // Complete all steps before showing success state
-      await simulateDelay(1000);
-
-      // Set the analysis as complete to trigger the success state
-      setAnalysisStatus("success");
-
-      return data;
-    } catch (error) {
-      console.error("Error during analysis:", error);
-
-      // If errorData is not already set, create appropriate error structure
-      if (!errorData) {
-        // Create error data based on the current step
-        switch (analysisStep) {
-          case 0:
-            setErrorData({
-              status: "error",
-              error: {
-                stage: "parameter_parsing",
-                message: `Parameter error: ${error.message}`,
-              },
-            });
-            break;
-          case 1:
-            setErrorData({
-              status: "error",
-              error: {
-                stage: "file_reading",
-                message: `CSV processing error: ${error.message}`,
-              },
-            });
-            break;
-          case 2:
-            setErrorData({
-              status: "error",
-              error: {
-                stage: "detect_groups",
-                message: `Algorithm error: ${error.message}`,
-              },
-            });
-            break;
-          case 3:
-            setErrorData({
-              status: "error",
-              error: {
-                stage: "network_generation",
-                message: `Network construction error: ${error.message}`,
-              },
-            });
-            break;
-          case 4:
-            setErrorData({
-              status: "error",
-              error: {
-                stage: "output_preparation",
-                message: `Saving error: ${error.message}`,
-              },
-            });
-            break;
-          default:
-            setErrorData({
-              status: "error",
-              error: {
-                stage: "unknown",
-                message: `Error: ${error.message}`,
-              },
-            });
-        }
-      }
-
-      setAnalysisStatus("error");
-      toast.error(error.message);
-      return null;
-    }
-  };*/
-
   // Handle completion of the success or error state and cleanup
   const handleAnalysisFinished = () => {
-    //console.log("Analysis finished with status:", analysisStatus);
-
     // Reset only the loading state - keep other states intact until explicitly changed
     setIsLoading(false);
 
@@ -596,7 +367,6 @@ export default function ConfigureParametersFormStep({
 
   return (
     <div className="w-full h-[100vh] mx-auto p-4 flex flex-col bg-gray-100 overflow-auto space-y-6">
-      {/* Analysis Progress Overlay */}
       <AnalysisProgressOverlay
         isVisible={isLoading}
         currentStep={analysisStep}
@@ -610,7 +380,7 @@ export default function ConfigureParametersFormStep({
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-6xl mx-auto space-y-8"
+        className="max-w-6xl mx-auto  space-y-4 w-full"
       >
         {/* Header Section */}
         <div className="text-center space-y-4">
@@ -631,10 +401,44 @@ export default function ConfigureParametersFormStep({
             </div>
           </div>
         </div>
+        {/* Action Buttons */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex items-center justify-between"
+        >
+          <button
+            onClick={prevStep}
+            className="px-6 py-3 rounded-lg font-medium text-black-600 hover:bg-blue-200 transition-colors flex items-center"
+            disabled={isLoading}
+          >
+            Back
+          </button>
 
-        {/* Progress Indicator */}
-        <ProgressBar currentStep={3} totalSteps={3} />
+          {/* Progress Bar in the middle */}
+          <div className="mx-4 flex-grow max-w-xs">
+            <ProgressBar currentStep={3} totalSteps={3} />
+          </div>
 
+          <button
+            disabled={isLoading || !formik.isValid}
+            onClick={formik.handleSubmit}
+            className={`px-6 py-3 rounded-lg font-medium transition-all flex items-center ${
+              isLoading || !formik.isValid
+                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                : "bg-gradient-to-r bg-[#00926c] text-white hover:shadow-lg"
+            }`}
+          >
+            {isLoading ? (
+              <div className="flex items-center">
+                <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2" />
+                Processing...
+              </div>
+            ) : (
+              "Analyse"
+            )}
+          </button>
+        </motion.div>
         {/* Main Content Area */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {/* Left Sidebar */}
@@ -650,17 +454,17 @@ export default function ConfigureParametersFormStep({
                   {
                     title: "Minimum Participation",
                     content:
-                      "The threshold for coordinated participation required for inclusion...",
+                      "The threshold for the minimum level of coordinated participation required for inclusion in the analysis. Only users in the dataset with at least the specified number of shares will be processed.",
                   },
                   {
                     title: "Time Window (seconds)",
                     content:
-                      "The interval considered for calculating co-shares...",
+                      "The time window indicates the interval considered for calculating co-shares. A very narrow time window (e.g., < 1 sec) tends to indicate automated behavior, whereas a time window of several hours may highlight human-coordinated behavior.",
                   },
                   {
                     title: "Edge Weight",
                     content:
-                      "Defines the minimum frequency of co-sharing required...",
+                      "The edge threshold defines the minimum frequency of co-sharing required for a connection to be made. It measures co-sharing frequency as a proportion (from 0 to 1) of all accounts in the dataset. A standard choice is the median (0.5). Using higher thresholds helps identify co-sharing activities between accounts that range from unusual to extremely unusual.",
                   },
                 ].map((note, index) => (
                   <motion.li
@@ -675,7 +479,7 @@ export default function ConfigureParametersFormStep({
                         <span className="text-sm text-gray-600">
                           {note.title}
                         </span>
-                        <div className="absolute z-10 invisible group-hover:visible opacity-0 group-hover:opacity-100 left-full ml-2 top-0 w-64 p-3 bg-white border rounded-lg shadow-lg transition-all">
+                        <div className="absolute z-10 invisible group-hover:visible opacity-0 group-hover:opacity-100 left-full  top-0 w-128 p-3 bg-white border rounded-lg shadow-lg transition-all">
                           <p className="text-sm text-gray-600">
                             {note.content}
                           </p>
@@ -822,40 +626,6 @@ export default function ConfigureParametersFormStep({
             </form>
           </motion.div>
         </div>
-
-        {/* Footer with Navigation Buttons */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex justify-between"
-        >
-          <button
-            onClick={prevStep}
-            className="px-6 py-3 rounded-lg font-medium text-gray-600 hover:bg-gray-100 transition-colors"
-            disabled={isLoading}
-          >
-            Back
-          </button>
-
-          <button
-            disabled={isLoading || !formik.isValid}
-            onClick={formik.handleSubmit}
-            className={`px-6 py-3 rounded-lg font-medium transition-all ${
-              isLoading || !formik.isValid
-                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                : "bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:shadow-lg"
-            }`}
-          >
-            {isLoading ? (
-              <div className="flex items-center">
-                <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2" />
-                Processing...
-              </div>
-            ) : (
-              "Analyse"
-            )}
-          </button>
-        </motion.div>
       </motion.div>
     </div>
   );

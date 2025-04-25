@@ -17,11 +17,12 @@ export default function Home() {
         <div className="mx-auto max-w-2xl py-8 sm:py-12 lg:py-14">
           <div className="text-center">
             <h1 className="text-3xl font-semibold tracking-tight text-gray-900 sm:text-5xl">
-              CoorTweet
+              Coordinated Sharing Behavior Detection
             </h1>
-            <p className="mt-4 text-sm text-black-500 sm:text-lg">
+            {/*<p className="mt-4 text-sm text-black-500 sm:text-lg">
               Coordinated Sharing Detection Service
-            </p>
+            </p> */}
+
             <div className="mt-5 flex items-center justify-center gap-x-3">
               <a
                 href="/login"

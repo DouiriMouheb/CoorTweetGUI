@@ -1,8 +1,6 @@
-export default function EmptyNetworksState({
-  searchTerm,
-  setSearchTerm,
-  onCreateNew,
-}) {
+import { FolderOpen } from "lucide-react";
+
+export default function EmptyNetworksState({ searchTerm, setSearchTerm }) {
   return (
     <tr>
       <td colSpan="2" className="px-6 py-8 text-center">
@@ -33,24 +31,10 @@ export default function EmptyNetworksState({
               </button>
             </>
           ) : (
-            <>
-              <svg
-                className="w-12 h-12 text-gray-400 mb-3"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"
-                />
-              </svg>
-              <p className="text-gray-500 mb-3">
-                You don't have any networks yet, try creating a new project
-              </p>
-            </>
+            <div className="flex items-center">
+              <FolderOpen className="mr-2 w-10 h-10 text-gray-500" />
+              <p className="text-gray-500">You don't have any Projects yet</p>
+            </div>
           )}
         </div>
       </td>

@@ -196,9 +196,6 @@ export default function UserProfile({ onUpdate }) {
               >
                 {getInitials(username)}
               </motion.div>
-              <button className="text-sm text-[#00926c] hover:text-black font-medium transition-colors">
-                Change Photo
-              </button>
             </div>
 
             {/* Form Section */}

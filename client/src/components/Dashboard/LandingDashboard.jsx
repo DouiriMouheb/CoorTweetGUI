@@ -1,20 +1,16 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-
 import { useAuth } from "../../context/authContext";
 import { useLogout } from "../../hooks/useLogout";
 import { useToast } from "../Toast.jsx";
-
 import MultiStepForm from "../MultiStepForm";
 import ConfirmationModal from "../ConfirmationModal.jsx";
-
 import Header from "./Header";
 import StatsCards from "./StatsCards";
 import NetworksTable from "./NetworksTable";
-
 import { useNetworks } from "../../hooks/useNetworks";
 import { useSearchAndPagination } from "../../hooks/useSearchAndPagination.js";
+import DuplicateModal from "../duplicateModal.jsx";
 
 const LandingDashboard = () => {
   const { showToast } = useToast();
@@ -22,7 +18,7 @@ const LandingDashboard = () => {
   const { user } = useAuth();
   const { logout } = useLogout();
 
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
   const [showDashboard, setShowDashboard] = useState(true);
   const [activeComponent, setActiveComponent] = useState(null);
 
@@ -58,7 +54,15 @@ const LandingDashboard = () => {
     projectName: "",
   });
 
+  const [duplicateConfirmation, setDuplicateConfirmation] = useState({
+    isOpen: false,
+    projectId: null,
+    projectName: "",
+    projectData: null,
+  });
+
   const toggleExpand = () => setIsExpanded(!isExpanded);
+  //const toggleExpand = () => setIsExpanded(isExpanded);
 
   const handleCreateProject = () => {
     setShowDashboard(false);
@@ -88,6 +92,23 @@ const LandingDashboard = () => {
     });
   };
 
+  const openDuplicateDialog = (id, name, data) => {
+    setDuplicateConfirmation({
+      isOpen: true,
+      projectId: id,
+      projectName: name,
+      projectData: data,
+    });
+  };
+  const closeDuplicateDialog = () => {
+    setDuplicateConfirmation({
+      isOpen: false,
+      projectId: null,
+      projectName: "",
+      projectData: null,
+    });
+  };
+
   const handleDeleteNetwork = async () => {
     const { projectId } = deleteConfirmation;
 
@@ -104,6 +125,25 @@ const LandingDashboard = () => {
       showToast("error", "Failed to delete project. Please try again.");
     } finally {
       closeDeleteDialog();
+    }
+  };
+  const handleDuplicateNetwork = async (formData) => {
+    const { projectId } = duplicateConfirmation;
+
+    if (!projectId) {
+      showToast("error", "Invalid project selected");
+      closeDuplicateDialog();
+      return;
+    }
+
+    try {
+      // You would need to implement this function in your useNetworks hook
+      const result = await duplicateNetwork(projectId, formData);
+      if (result) showToast("success", "Project duplicated successfully!");
+    } catch {
+      showToast("error", "Failed to duplicate project. Please try again.");
+    } finally {
+      closeDuplicateDialog();
     }
   };
 
@@ -156,6 +196,7 @@ const LandingDashboard = () => {
               prevPage={prevPage}
               handleViewNetwork={handleViewNetwork}
               openDeleteDialog={openDeleteDialog}
+              openDuplicateDialog={openDuplicateDialog}
               onCreateProject={handleCreateProject}
             />
           </div>
@@ -179,6 +220,32 @@ const LandingDashboard = () => {
           removed.
         </p>
       </ConfirmationModal>
+      {/*<ConfirmationModal
+        isOpen={duplicateConfirmation.isOpen}
+        onClose={closeDuplicateDialog}
+        onConfirm={handleDuplicateNetwork}
+        title="Change the Project's Parameters"
+        message={``}
+        confirmText="Next"
+        confirmColor="blue"
+        disabled={loading}
+      >
+        <p className="mt-2 text-sm text-blue-600">
+          You will be able to start a new analaysis using the same dataset of
+          this project, but with different parameters.
+        </p>
+      </ConfirmationModal>*/}
+
+      <DuplicateModal
+        isOpen={duplicateConfirmation.isOpen}
+        onClose={closeDuplicateDialog}
+        onConfirm={handleDuplicateNetwork}
+        projectData={duplicateConfirmation.projectData}
+        title="Change the Project's Parameters"
+        confirmText="Analyze"
+        confirmColor="green"
+        disabled={loading}
+      ></DuplicateModal>
     </div>
   );
 };

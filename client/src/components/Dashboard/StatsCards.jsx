@@ -10,7 +10,8 @@ export default function StatsCards({
   return (
     <div className="col-span-1 space-y-6">
       {/* Networks */}
-      <motion.div className="bg-white rounded-2xl shadow-lg p-6">
+      {/* 
+          <motion.div className="bg-white rounded-2xl shadow-lg p-6">
         <div className="flex items-center justify-between">
           <div className="p-4 bg-[#00926c] rounded-xl">
             <svg
@@ -39,6 +40,7 @@ export default function StatsCards({
           </div>
         </div>
       </motion.div>
+        */}
 
       {/* Datasets */}
       {/*  <motion.div className="bg-white rounded-2xl shadow-lg p-6">

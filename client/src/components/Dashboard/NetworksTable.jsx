@@ -20,6 +20,7 @@ export default function NetworksTable({
   prevPage,
   handleViewNetwork,
   openDeleteDialog,
+  openDuplicateDialog,
   onCreateProject,
 }) {
   // Track if initial fetch has been performed
@@ -79,6 +80,7 @@ export default function NetworksTable({
           network={network}
           onView={handleViewNetwork}
           onDelete={openDeleteDialog}
+          onDuplicate={openDuplicateDialog}
         />
       );
     });
@@ -99,32 +101,6 @@ export default function NetworksTable({
           {loading && (
             <div className="ml-3 w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
           )}
-          {/*!loading && (
-            <button
-              onClick={handleRefresh}
-              title="Refresh networks"
-              className="ml-2"
-              disabled={loading}
-            >
-              <svg
-                className={`w-4 h-4 ${
-                  loading
-                    ? "text-gray-300"
-                    : "text-black-500 hover:text-blue-700"
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
-            </button>
-          )*/}
         </div>
         <div className="relative w-full md:w-64">
           <input

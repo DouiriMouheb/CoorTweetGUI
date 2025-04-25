@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Papa from "papaparse";
 import { toast } from "react-hot-toast";
 import { motion } from "framer-motion";
+import { Upload, X, FileText, ArrowRight, ArrowLeft } from "lucide-react";
+
 // Import from our modules
 import { PLATFORMS } from "./constants";
 import { identifyDataSource } from "./utils/platformDetector";
@@ -9,7 +11,6 @@ import { platformHandlers } from "./handlers";
 import AccountSourceSelector from "./ui/AccountSourceSelector";
 import ObjectIDSourceSelector from "./ui/ObjectIDSourceSelector";
 import PlatformInfo from "./ui/PlatformInfo";
-import StepIndicator from "./ui/StepIndicator";
 import { ProgressBar } from "../ProgressBar";
 import PrepareDataset from "./PrepareDataset"; // Import the PrepareDataset component
 
@@ -494,7 +495,7 @@ export default function PlatformSelectorStep({
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-6xl mx-auto  space-y-8"
+        className="max-w-6xl mx-auto  space-y-4 w-full"
       >
         {/* Header Section */}
         <div className="text-center space-y-4">
@@ -517,8 +518,61 @@ export default function PlatformSelectorStep({
         </div>
 
         {/* Progress Indicator */}
-        <ProgressBar currentStep={2} totalSteps={3} />
 
+        {/* Footer with Navigation Buttons */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex items-center justify-between"
+        >
+          <button
+            onClick={prevStep}
+            disabled={isLoading}
+            className="px-6 py-3 rounded-lg font-medium text-black-600 hover:bg-blue-200 transition-colors flex items-center"
+          >
+            <ArrowLeft className="mr-2 w-5 h-5" />
+            Back
+          </button>
+          <div className="mx-4 flex-grow max-w-xs">
+            <ProgressBar currentStep={2} totalSteps={3} />
+          </div>
+          <button
+            disabled={
+              isLoading ||
+              disableButton ||
+              (selectedPlatform !== PLATFORMS.PREPROCESSED &&
+                (!formData.accountSource || !formData.objectIdSource))
+            }
+            className={`px-6 py-3 rounded-lg font-medium transition-all flex items-center ${
+              isLoading
+                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                : "bg-gradient-to-r bg-[#00926c] text-white hover:shadow-lg"
+            }`}
+            onClick={() => {
+              setIsLoading(true);
+              updateCsvHeaders()
+                .then(() => nextStep())
+                .catch((err) => {
+                  console.error("Failed to update CSV:", err);
+                  toast.error("Failed to update CSV. Please try again.");
+                  setIsLoading(false);
+                  setIsDisabled(true);
+                });
+            }}
+          >
+            {isLoading ? (
+              <div className="flex items-center">
+                <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2" />
+                Processing...
+              </div>
+            ) : (
+              <>
+                Next Step
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </>
+            )}
+          </button>
+        </motion.div>
         {/* Main Content Area */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {/* Left Sidebar */}
@@ -581,55 +635,6 @@ export default function PlatformSelectorStep({
               )}
           </div>
         </div>
-
-        {/* Footer with Navigation Buttons */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex justify-between"
-        >
-          <button
-            onClick={prevStep}
-            disabled={isLoading}
-            className="px-6 py-3 rounded-lg font-medium text-gray-600 hover:bg-gray-100 transition-colors"
-          >
-            Back
-          </button>
-
-          <button
-            disabled={
-              isLoading ||
-              disableButton ||
-              (selectedPlatform !== PLATFORMS.PREPROCESSED &&
-                (!formData.accountSource || !formData.objectIdSource))
-            }
-            className={`px-6 py-3 rounded-lg font-medium transition-all ${
-              isLoading
-                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                : "bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:shadow-lg"
-            }`}
-            onClick={() => {
-              setIsLoading(true);
-              updateCsvHeaders()
-                .then(() => nextStep())
-                .catch((err) => {
-                  console.error("Failed to update CSV:", err);
-                  toast.error("Failed to update CSV. Please try again.");
-                  setIsLoading(false);
-                  setIsDisabled(true);
-                });
-            }}
-          >
-            {isLoading ? (
-              <div className="flex items-center">
-                <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2" />
-                Processing...
-              </div>
-            ) : (
-              "Next Step →"
-            )}
-          </button>
-        </motion.div>
       </motion.div>
     </div>
   );

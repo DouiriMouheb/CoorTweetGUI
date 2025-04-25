@@ -58,7 +58,7 @@ export default function Header({
                   onClick={() => {
                     setShowDashboard(true);
                     setActiveComponent(null);
-                    toggleExpand();
+                    //toggleExpand();
                   }}
                   className="flex items-center space-x-2 hover:text-blue-200"
                 >
@@ -69,7 +69,7 @@ export default function Header({
                   onClick={() => {
                     setShowDashboard(false);
                     setActiveComponent(<UserProfile />);
-                    toggleExpand();
+                    //toggleExpand();
                   }}
                   className="flex items-center space-x-2 hover:text-blue-200"
                 >

@@ -63,8 +63,7 @@ const UploadDatasetStep = ({ nextStep, formData, setFormData }) => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        // className="max-w-3xl mx-auto p-6 space-y-8"
-        className="max-w-6xl mx-auto  space-y-8 w-full"
+        className="max-w-6xl mx-auto  space-y-4 w-full"
       >
         {/* Header Section */}
         <div className="text-center space-y-4">
@@ -86,12 +85,39 @@ const UploadDatasetStep = ({ nextStep, formData, setFormData }) => {
           </div>
         </div>
 
-        {/* Progress Indicator */}
-        <div className="w-full px-6">
-          {" "}
-          {/* Added container div */}
-          <ProgressBar currentStep={1} totalSteps={3} />
-        </div>
+        {/* Action Buttons */}
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex items-center justify-between"
+        >
+          <button
+            onClick={handleCancel}
+            className="px-6 py-3 rounded-lg font-medium text-black-600 hover:bg-blue-200 transition-colors flex items-center"
+          >
+            <ArrowLeft className="mr-2 w-5 h-5" />
+            Cancel
+          </button>
+
+          {/* Progress Bar in the middle */}
+          <div className="mx-4 flex-grow max-w-xs">
+            <ProgressBar currentStep={1} totalSteps={3} />
+          </div>
+          <button
+            onClick={nextStep}
+            disabled={!formData.csvFile}
+            className={`px-6 py-3 rounded-lg font-medium transition-all flex items-center ${
+              formData.csvFile
+                ? "bg-gradient-to-r bg-[#00926c] text-white hover:shadow-lg"
+                : "bg-gray-200 text-gray-400 cursor-not-allowed"
+            }`}
+          >
+            Next Step
+            <ArrowRight className="ml-2 w-5 h-5" />
+          </button>
+        </motion.div>
+
         {/* Dropzone Area */}
         {!formData.csvFile ? (
           <motion.div
@@ -164,34 +190,6 @@ const UploadDatasetStep = ({ nextStep, formData, setFormData }) => {
             </div>
           </motion.div>
         )}
-
-        {/* Action Buttons */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex justify-between"
-        >
-          <button
-            onClick={handleCancel}
-            className="px-6 py-3 rounded-lg font-medium text-black-600 hover:bg-blue-200 transition-colors flex items-center"
-          >
-            <ArrowLeft className="mr-2 w-5 h-5" />
-            Cancel
-          </button>
-
-          <button
-            onClick={nextStep}
-            disabled={!formData.csvFile}
-            className={`px-6 py-3 rounded-lg font-medium transition-all flex items-center ${
-              formData.csvFile
-                ? "bg-gradient-to-r bg-[#00926c] text-white hover:shadow-lg"
-                : "bg-gray-200 text-gray-400 cursor-not-allowed"
-            }`}
-          >
-            Continue to Configuration
-            <ArrowRight className="ml-2 w-5 h-5" />
-          </button>
-        </motion.div>
       </motion.div>
     </div>
   );

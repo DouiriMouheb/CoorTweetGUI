@@ -230,7 +230,7 @@ const LoginScreen = () => {
             animate={{ opacity: 1 }}
             className="text-3xl font-bold bg-[#00926c] bg-clip-text text-transparent"
           >
-            CoorTweet
+            Coordinated Sharing Behavior Detection
           </motion.h1>
           <h2 className="text-lg text-gray-600">Sign in to your account</h2>
         </div>
