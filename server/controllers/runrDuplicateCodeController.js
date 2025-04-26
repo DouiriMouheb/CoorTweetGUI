@@ -5,30 +5,28 @@ const cleanupFile = require("../helpers/cleanupFile");
 
 // Define the path to your R script
 const scriptPath = path.resolve(__dirname, "../scriptR", "scriptCoorTweet.R");
-// Define the directory where you want to store the files
-const uploadDir = path.resolve(__dirname, "../uploads");
+// Define the directory where uploads are stored
+const uploadsDir = path.resolve(__dirname, "../uploads");
 
-const runrCode = async (req, res) => {
-  const {
-    min_participation,
-    time_window,
-    subgraph,
-    edge_weight,
-    userId,
-    projectName, // Parameter for project name
-  } = req.body; // Assuming you have user authentication set up
-
-  let filePath;
-  let fullFilename;
+const runrDuplicateCode = async (req, res) => {
+  // Extract parameters from the request body or FormData
+  const min_participation =
+    req.body.min_participation || req.body.minParticipation;
+  const time_window = req.body.time_window || req.body.timeWindow;
+  const subgraph = req.body.subgraph || 1; // Default to 1 if not provided
+  const edge_weight = req.body.edge_weight || req.body.edgeWeight;
+  const userId = req.body.userId;
+  const projectName = req.body.projectName;
+  const dataSetName = req.body.dataSetName || req.body.filename; // Accept either name
 
   try {
-    // Check if file exists in the request
-    if (!req.file) {
+    // No need to check for req.file since we're using an existing file
+    if (!dataSetName) {
       return res.status(400).json({
         status: "error",
         error: {
           stage: "input_validation",
-          message: "No file uploaded",
+          message: "No dataSetName provided",
         },
       });
     }
@@ -39,44 +37,32 @@ const runrCode = async (req, res) => {
         status: "error",
         error: {
           stage: "input_validation",
-          message: "userId and projectName are required for file upload",
+          message: "userId and projectName are required",
         },
       });
     }
 
-    // Process the uploaded file
-    const tempFilePath = path.resolve(req.file.path);
+    // Construct the full file path
+    const filePath = path.join(uploadsDir, dataSetName);
 
-    // Ensure uploads directory exists
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-
-    // Create filename with userId-projectName format
-    fullFilename = `${userId}-${projectName}.csv`;
-    const permanentFilePath = path.join(uploadDir, fullFilename);
-
-    // Save file to permanent location
-    fs.copyFileSync(tempFilePath, permanentFilePath);
-
-    // Clean up the temp file
-    await cleanupFile(tempFilePath);
-
-    filePath = permanentFilePath;
-
-    // Validate inputs
-    if (
-      !min_participation ||
-      !time_window ||
-      !subgraph ||
-      !edge_weight ||
-      !filePath
-    ) {
+    // Check if the file exists
+    if (!fs.existsSync(filePath)) {
       return res.status(400).json({
         status: "error",
         error: {
           stage: "input_validation",
-          message: "Missing required parameters or dataset not found",
+          message: `File ${dataSetName} not found in uploads directory`,
+        },
+      });
+    }
+
+    // Validate inputs
+    if (!min_participation || !time_window || !subgraph || !edge_weight) {
+      return res.status(400).json({
+        status: "error",
+        error: {
+          stage: "input_validation",
+          message: "Missing required parameters",
         },
       });
     }
@@ -88,7 +74,7 @@ const runrCode = async (req, res) => {
       time_window,
       subgraph,
       edge_weight,
-      filePath,
+      filePath, // Pass the full file path to the R script
     ]);
 
     console.log(
@@ -111,7 +97,7 @@ const runrCode = async (req, res) => {
     rProcess.on("close", async (code) => {
       try {
         const resultJson = JSON.parse(stdoutData);
-        resultJson.filename = fullFilename;
+        resultJson.filename = dataSetName; // Use dataSetName as the filename in the response
         return res.json(resultJson);
       } catch (stdoutError) {
         console.error("Failed to parse R stdout as JSON:", stdoutError);
@@ -152,12 +138,7 @@ const runrCode = async (req, res) => {
       });
     });
   } catch (error) {
-    console.error("Error in runrCode:", error);
-
-    // Clean up temp file if it exists
-    if (req.file) {
-      await cleanupFile(req.file.path);
-    }
+    console.error("Error in runrDuplicateCode:", error);
 
     return res.status(500).json({
       status: "error",
@@ -172,5 +153,5 @@ const runrCode = async (req, res) => {
 };
 
 module.exports = {
-  runrCode,
+  runrDuplicateCode,
 };

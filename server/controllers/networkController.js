@@ -3,8 +3,14 @@ const Network = require("../models/network");
 // Save network data
 
 const saveNetwork = async (req, res) => {
-  const { data, networkName, minParticipation, timeWindow, edgeWeight } =
-    req.body;
+  const {
+    data,
+    networkName,
+    minParticipation,
+    timeWindow,
+    edgeWeight,
+    dataSetName,
+  } = req.body;
   const userId = req.user._id;
   try {
     const network = await Network.create({
@@ -14,6 +20,7 @@ const saveNetwork = async (req, res) => {
       minParticipation,
       timeWindow,
       edgeWeight,
+      dataSetName,
     });
     res.status(201).json(network);
   } catch (error) {
@@ -50,6 +57,10 @@ const getNetworkNames = async (req, res) => {
     const networkData = networks.map((network) => ({
       id: network._id,
       name: network.networkName,
+      dataSetName: network.dataSetName,
+      minParticipation: network.minParticipation,
+      timeWindow: network.timeWindow,
+      edgeWeight: network.edgeWeight,
     }));
 
     res.status(200).json(networkData);

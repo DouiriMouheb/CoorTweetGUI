@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { data, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/authContext";
 import { useLogout } from "../../hooks/useLogout";
 import { useToast } from "../Toast.jsx";
@@ -10,7 +10,7 @@ import StatsCards from "./StatsCards";
 import NetworksTable from "./NetworksTable";
 import { useNetworks } from "../../hooks/useNetworks";
 import { useSearchAndPagination } from "../../hooks/useSearchAndPagination.js";
-import DuplicateModal from "../duplicateModal.jsx";
+import DuplicateModal from "../DuplicateModal.jsx";
 
 const LandingDashboard = () => {
   const { showToast } = useToast();
@@ -59,6 +59,7 @@ const LandingDashboard = () => {
     projectId: null,
     projectName: "",
     projectData: null,
+    dataSetName: null,
   });
 
   const toggleExpand = () => setIsExpanded(!isExpanded);
@@ -92,12 +93,13 @@ const LandingDashboard = () => {
     });
   };
 
-  const openDuplicateDialog = (id, name, data) => {
+  const openDuplicateDialog = (id, name, dataSetName) => {
     setDuplicateConfirmation({
       isOpen: true,
       projectId: id,
       projectName: name,
       projectData: data,
+      dataSetName: dataSetName,
     });
   };
   const closeDuplicateDialog = () => {
@@ -106,6 +108,7 @@ const LandingDashboard = () => {
       projectId: null,
       projectName: "",
       projectData: null,
+      dataSetName: null,
     });
   };
 
@@ -136,15 +139,7 @@ const LandingDashboard = () => {
       return;
     }
 
-    try {
-      // You would need to implement this function in your useNetworks hook
-      const result = await duplicateNetwork(projectId, formData);
-      if (result) showToast("success", "Project duplicated successfully!");
-    } catch {
-      showToast("error", "Failed to duplicate project. Please try again.");
-    } finally {
-      closeDuplicateDialog();
-    }
+    closeDuplicateDialog();
   };
 
   const handleViewNetwork = useCallback(
@@ -220,26 +215,11 @@ const LandingDashboard = () => {
           removed.
         </p>
       </ConfirmationModal>
-      {/*<ConfirmationModal
-        isOpen={duplicateConfirmation.isOpen}
-        onClose={closeDuplicateDialog}
-        onConfirm={handleDuplicateNetwork}
-        title="Change the Project's Parameters"
-        message={``}
-        confirmText="Next"
-        confirmColor="blue"
-        disabled={loading}
-      >
-        <p className="mt-2 text-sm text-blue-600">
-          You will be able to start a new analaysis using the same dataset of
-          this project, but with different parameters.
-        </p>
-      </ConfirmationModal>*/}
-
       <DuplicateModal
         isOpen={duplicateConfirmation.isOpen}
         onClose={closeDuplicateDialog}
         onConfirm={handleDuplicateNetwork}
+        dataSetName={duplicateConfirmation.dataSetName}
         projectData={duplicateConfirmation.projectData}
         title="Change the Project's Parameters"
         confirmText="Analyze"

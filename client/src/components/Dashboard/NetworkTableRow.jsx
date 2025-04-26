@@ -19,6 +19,10 @@ export default function NetworkTableRow({
   // Extract id and name safely, with fallbacks
   const id = network.id || network._id || "";
   const name = network.name || "Unnamed Network";
+  const dataSetName = network.dataSetName || "Unnamed Dataset";
+  const minParticipation = network.minParticipation || 0;
+  const timewindow = network.timeWindow || 0;
+  const edgeWeight = network.edgeWeight || 0;
 
   return (
     <motion.tr
@@ -27,6 +31,9 @@ export default function NetworkTableRow({
       className="hover:bg-gray-50"
     >
       <td className="px-6 py-4 text-sm font-medium text-black-600">{name}</td>
+      <td className="px-6 py-4 text-sm font-medium text-black-600">
+        {minParticipation} -- {timewindow} -- {edgeWeight}
+      </td>
       <td className="px-6 py-4 text-right space-x-4">
         <button
           onClick={() => onView(id, name)}
@@ -53,7 +60,7 @@ export default function NetworkTableRow({
           </svg>
         </button>
         <button
-          onClick={() => onDuplicate(id, name)}
+          onClick={() => onDuplicate(id, name, dataSetName)}
           className="text-gray-500 hover:text-yellow-600 transition-colors"
         >
           <Cog6ToothIcon className="w-5 h-5" />

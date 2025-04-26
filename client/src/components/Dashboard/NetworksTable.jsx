@@ -1,4 +1,4 @@
-import { XMarkIcon } from "@heroicons/react/24/outline";
+import { XMarkIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
 import { useEffect, useRef } from "react";
 import TableRowSkeleton from "./TableSkeletons";
 import EmptyNetworksState from "./EmptyState";
@@ -123,13 +123,46 @@ export default function NetworksTable({
         </div>
       </div>
 
-      <div className="overflow-x-auto" style={{ minHeight: "275px" }}>
+      <div className="overflow-visible" style={{ minHeight: "275px" }}>
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">
                 Name
               </th>
+              <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase relative group overflow-visible">
+                <div className="flex items-center gap-2 relative group">
+                  Parameters
+                  <div className="relative flex items-center">
+                    <InformationCircleIcon className="h-5 w-5 text-gray-400 hover:text-blue-600 cursor-pointer transition-colors duration-300" />
+
+                    {/* Tooltip */}
+                    <div className="absolute top-1/2 left-10 transform -translate-y-1/2 translate-x-2 w-[360px] p-4 bg-white rounded-xl shadow-xl border border-gray-200 opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none group-hover:pointer-events-auto transition-all duration-300 ease-in-out z-20">
+                      <div className="space-y-2 text-sm text-gray-600 leading-relaxed">
+                        <p>
+                          These are the{" "}
+                          <span className="font-semibold text-gray-800">
+                            parameters
+                          </span>{" "}
+                          used to analyze the dataset.
+                        </p>
+                        <p>
+                          They represent, in order:{" "}
+                          <span className="font-semibold">
+                            minParticipation
+                          </span>
+                          , <span className="font-semibold">timeWindow</span>,{" "}
+                          <span className="font-semibold">edgeWeight</span>.
+                        </p>
+                      </div>
+
+                      {/* Arrow */}
+                      <div className="absolute top-1/2 -left-2 transform -translate-y-1/2 w-4 h-4 bg-white rotate-45 border-t border-l border-gray-200 shadow-md"></div>
+                    </div>
+                  </div>
+                </div>
+              </th>
+
               <th className="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase">
                 Actions
               </th>

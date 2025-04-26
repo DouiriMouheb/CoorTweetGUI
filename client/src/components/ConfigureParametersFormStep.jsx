@@ -89,6 +89,7 @@ export default function ConfigureParametersFormStep({
       minParticipation: parameters.minParticipation,
       timeWindow: parameters.timeWindow,
       edgeWeight: parameters.edgeWeight,
+      dataSetName: data.filename,
     };
 
     try {
@@ -175,10 +176,12 @@ export default function ConfigureParametersFormStep({
       const requestUrl = `${apiUrl}/r/run-r`;
       const formDataToSend = new FormData();
       formDataToSend.append("input", csvFile);
+      formDataToSend.append("userId", user.userId); // Pass user ID to the API
       formDataToSend.append("min_participation", parameters.minParticipation);
       formDataToSend.append("time_window", parameters.timeWindow);
       formDataToSend.append("subgraph", 1);
       formDataToSend.append("edge_weight", parameters.edgeWeight);
+      formDataToSend.append("projectName", parameters.projectName); //
 
       // Step 3: Running algorithm
       setAnalysisStep(2);
@@ -192,6 +195,7 @@ export default function ConfigureParametersFormStep({
       });
 
       // Axios auto-parses JSON
+      console.log(response);
       const data = response.data;
 
       // Check if the response contains an error status from R script

@@ -6,7 +6,8 @@ const userRoutes = require("./routes/user");
 const networkRoutes = require("./routes/network");
 const cookieParser = require("cookie-parser");
 const runrRoutes = require("./routes/runrCode");
-
+const runrDuplicateRoutes = require("./routes/runrDuplicateCode");
+const storedCsvRoutes = require("./routes/storedCsv"); // New route for file management
 const app = express();
 // Connect to MongoDB
 mongoose
@@ -38,6 +39,8 @@ app.use("/api/network", networkRoutes);
 
 // API Route to execute the R script
 app.use("/r", runrRoutes);
+app.use("/r-duplicate", runrDuplicateRoutes);
+app.use("/stored-csv", storedCsvRoutes); // New route for file management
 
 const port = process.env.PORT || 5000;
 app.listen(port, "0.0.0.0", () => {

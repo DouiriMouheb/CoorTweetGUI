@@ -8,6 +8,7 @@ const NetworkSchema = new mongoose.Schema({
   timeWindow: { type: Number, required: true },
   edgeWeight: { type: String, required: true },
   createdAt: { type: Date, default: Date.now },
+  dataSetName: { type: String, required: true }, // Store the dataset name
 });
 
 module.exports = mongoose.model("Network", NetworkSchema);
