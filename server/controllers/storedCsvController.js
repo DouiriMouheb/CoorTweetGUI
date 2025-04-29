@@ -5,23 +5,34 @@ const fs = require("fs");
 const uploadDir = path.resolve(__dirname, "../uploads");
 
 /**
- * Get all CSV files from the uploads directory
+ * Get all CSV files from the uploads directory, optionally filtered by userId
  * @param {object} req - Express request object
  * @param {object} res - Express response object
  */
 const getAllCsvFiles = async (req, res) => {
   try {
+    // Get userId from query parameters
+    const { userId } = req.query;
+
     // Ensure uploads directory exists
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
-      return res.json({ files: [] });
+      return res.json({
+        status: "success",
+        files: [],
+      });
     }
 
     // Read all files in the uploads directory
     const files = fs.readdirSync(uploadDir);
 
     // Filter only CSV files
-    const csvFiles = files.filter((file) => file.endsWith(".csv"));
+    let csvFiles = files.filter((file) => file.endsWith(".csv"));
+
+    // If userId is provided, filter files that contain the userId
+    if (userId) {
+      csvFiles = csvFiles.filter((file) => file.includes(userId));
+    }
 
     // Return the list of CSV files
     return res.json({

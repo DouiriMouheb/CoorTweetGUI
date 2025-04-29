@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
-import { data, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/authContext";
 import { useLogout } from "../../hooks/useLogout";
 import { useToast } from "../Toast.jsx";
@@ -63,7 +63,6 @@ const LandingDashboard = () => {
   });
 
   const toggleExpand = () => setIsExpanded(!isExpanded);
-  //const toggleExpand = () => setIsExpanded(isExpanded);
 
   const handleCreateProject = () => {
     setShowDashboard(false);
@@ -94,14 +93,24 @@ const LandingDashboard = () => {
   };
 
   const openDuplicateDialog = (id, name, dataSetName) => {
+    // Create the project data with default parameters
+    const projectData = {
+      projectName: name || "New Analysis",
+      minParticipation: 2,
+      timeWindow: 60,
+      edgeWeight: 0.5,
+    };
+
+    // Open the duplicate confirmation dialog with the project data and dataset name
     setDuplicateConfirmation({
       isOpen: true,
       projectId: id,
       projectName: name,
-      projectData: data,
+      projectData: projectData,
       dataSetName: dataSetName,
     });
   };
+
   const closeDuplicateDialog = () => {
     setDuplicateConfirmation({
       isOpen: false,
@@ -130,16 +139,22 @@ const LandingDashboard = () => {
       closeDeleteDialog();
     }
   };
+
   const handleDuplicateNetwork = async (formData) => {
     const { projectId } = duplicateConfirmation;
 
-    if (!projectId) {
-      showToast("error", "Invalid project selected");
+    if (!projectId && !formData.dataSetName) {
+      showToast("error", "Invalid project or dataset selected");
       closeDuplicateDialog();
       return;
     }
 
+    // Here you would typically start the duplication process
+    // For now we're just closing the dialog as the actual processing happens in DuplicateModal
     closeDuplicateDialog();
+
+    // You might want to show a toast or redirect the user
+    showToast("success", "Analysis started successfully!");
   };
 
   const handleViewNetwork = useCallback(
@@ -171,11 +186,14 @@ const LandingDashboard = () => {
         <div className="max-w-7xl mx-auto w-full space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <StatsCards
+              userId={user.userId}
               networks={networks}
               loading={loading}
               initialLoading={initialLoading}
               onCreateProject={handleCreateProject}
+              onDuplicate={openDuplicateDialog}
             />
+
             <NetworksTable
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
@@ -215,17 +233,18 @@ const LandingDashboard = () => {
           removed.
         </p>
       </ConfirmationModal>
+
       <DuplicateModal
         isOpen={duplicateConfirmation.isOpen}
         onClose={closeDuplicateDialog}
         onConfirm={handleDuplicateNetwork}
         dataSetName={duplicateConfirmation.dataSetName}
         projectData={duplicateConfirmation.projectData}
-        title="Change the Project's Parameters"
+        title="Start new analysis"
         confirmText="Analyze"
         confirmColor="green"
         disabled={loading}
-      ></DuplicateModal>
+      />
     </div>
   );
 };

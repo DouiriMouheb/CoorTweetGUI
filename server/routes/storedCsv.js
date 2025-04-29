@@ -8,7 +8,7 @@ const {
 
 // New endpoints for file management
 router.post("/csv-files", getAllCsvFiles);
-router.post("/csv-files/:filename", getCsvFile);
-router.post("/csv-files/:filename", deleteCsvFile);
+router.get("/csv-files/:filename", getCsvFile);
+router.delete("/csv-files/:filename", deleteCsvFile);
 
 module.exports = router;

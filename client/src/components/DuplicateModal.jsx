@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { DocumentDuplicateIcon } from "@heroicons/react/24/solid";
+import { ArrowPathRoundedSquareIcon } from "@heroicons/react/24/solid";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { useEffect, useState } from "react";
@@ -367,15 +367,16 @@ export default function DuplicateModal({
               className="bg-white rounded-xl p-6 max-w-lg w-full shadow-xl"
             >
               <div className="flex items-start mb-4">
-                <DocumentDuplicateIcon className="w-6 h-6 text-blue-500 mr-3 mt-1" />
+                <ArrowPathRoundedSquareIcon className="w-6 h-6 text-green-500 mr-3 mt-1" />
                 <div>
                   <h3 className="text-lg font-medium text-gray-900 mb-1">
                     {title}
                   </h3>
                   <p className="text-sm text-gray-500 mb-4">
-                    Please customize the settings for your duplicated project:
+                    You are about to start a new analysis based on the selected
+                    dataset.
                   </p>
-                  <p className="text-sm text-gray-500">{dataSetName}</p>
+
                   {/* Hidden input field for dataSetName */}
                   <input
                     type="hidden"

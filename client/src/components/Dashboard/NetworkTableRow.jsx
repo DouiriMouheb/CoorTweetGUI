@@ -1,15 +1,6 @@
 import { motion } from "framer-motion";
-import {
-  TrashIcon,
-  DocumentDuplicateIcon,
-  Cog6ToothIcon,
-} from "@heroicons/react/24/outline";
-export default function NetworkTableRow({
-  network,
-  onView,
-  onDelete,
-  onDuplicate,
-}) {
+import { TrashIcon, Cog6ToothIcon } from "@heroicons/react/24/outline";
+export default function NetworkTableRow({ network, onView, onDelete }) {
   // Check if network is defined before trying to use it
   if (!network) {
     console.error("Network data is undefined");
@@ -59,12 +50,7 @@ export default function NetworkTableRow({
             />
           </svg>
         </button>
-        <button
-          onClick={() => onDuplicate(id, name, dataSetName)}
-          className="text-gray-500 hover:text-yellow-600 transition-colors"
-        >
-          <Cog6ToothIcon className="w-5 h-5" />
-        </button>
+
         <button
           onClick={() => onDelete(id, name)}
           className="text-gray-500 hover:text-red-600 transition-colors"

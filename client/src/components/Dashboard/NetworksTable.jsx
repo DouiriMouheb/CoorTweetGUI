@@ -80,7 +80,6 @@ export default function NetworksTable({
           network={network}
           onView={handleViewNetwork}
           onDelete={openDeleteDialog}
-          onDuplicate={openDuplicateDialog}
         />
       );
     });

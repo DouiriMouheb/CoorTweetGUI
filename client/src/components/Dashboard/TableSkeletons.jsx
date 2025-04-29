@@ -11,7 +11,6 @@ export default function TableRowSkeleton() {
         <div className="flex justify-end space-x-4">
           <div className="h-5 w-5 bg-gray-400 rounded-full"></div>
           <div className="h-5 w-5 bg-gray-400 rounded-full"></div>
-          <div className="h-5 w-5 bg-gray-400 rounded-full"></div>
         </div>
       </td>
     </tr>
