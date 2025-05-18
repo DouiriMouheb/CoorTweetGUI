@@ -147,9 +147,9 @@ const NetworkScreen = () => {
             <div className="flex">
               {[
                 // { id: 1, label: "Summary", icon: TableCellsIcon },
-                { id: 1, label: "Coordinated Networks", icon: ArrowDownOnSquareStackIcon },
-  { id: 2, label: "Coordinated Accounts", icon: ArrowDownOnSquareStackIcon },
-  { id: 3, label: "Coordinated Posts", icon: ArrowDownOnSquareStackIcon },
+                { id: 1, label: "Summary by cluster ", icon: ArrowDownOnSquareStackIcon },
+  { id: 2, label: "Summary by node", icon: ArrowDownOnSquareStackIcon },
+  { id: 3, label: "Summary by object ", icon: ArrowDownOnSquareStackIcon },
        { id: 4, label: "Parameters", icon: AdjustmentsHorizontalIcon },
               ].map((tab) => {
                 const IconComponent = tab.icon;
@@ -185,12 +185,12 @@ const NetworkScreen = () => {
               >
                 {activeTab === 1 && (
                   <div className="overflow-x-auto rounded-lg shadow-inner">
-                <ClusterTable mode="community" networkData={network} loading={loading} />       </div>
+                <ClusterTable mode="Cluster" networkData={network} loading={loading} />       </div>
                 )}
 
 {activeTab === 2 && (
                   <div className="overflow-x-auto rounded-lg shadow-inner">
-  <ClusterTable mode="account" networkData={network} loading={loading} />                  </div>
+  <ClusterTable mode="node" networkData={network} loading={loading} />                  </div>
                 )}
 
 {activeTab === 3 && (

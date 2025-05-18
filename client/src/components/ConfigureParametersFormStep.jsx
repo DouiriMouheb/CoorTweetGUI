@@ -50,7 +50,7 @@ export default function ConfigureParametersFormStep({
       edgeWeight: formData.parameters?.edgeWeight || "0.5",
     },
     validationSchema: Yup.object({
-      projectName: Yup.string().trim().required("Project name is required"),
+      projectName: Yup.string().trim().required("Analysis name is required"),
       minParticipation: Yup.number()
         .min(1, "Minimum participation must be at least 1")
         .required("Minimum participation is required"),
@@ -512,7 +512,7 @@ export default function ConfigureParametersFormStep({
                   htmlFor="projectName"
                   className="text-sm font-medium md:col-span-1 md:text-right"
                 >
-                  Project Name:
+                  Analysis Name:
                 </label>
                 <div className="md:col-span-2">
                   <input

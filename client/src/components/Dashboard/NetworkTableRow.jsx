@@ -11,6 +11,9 @@ export default function NetworkTableRow({ network, onView, onDelete }) {
   const id = network.id || network._id || "";
   const name = network.name || "Unnamed Network";
   const dataSetName = network.dataSetName || "Unnamed Dataset";
+  const cleanDataSetName = dataSetName
+  .replace(/^[^-]+-/, '')
+  .replace(/\.csv$/i, '');
   const minParticipation = network.minParticipation || 0;
   const timewindow = network.timeWindow || 0;
   const edgeWeight = network.edgeWeight || 0;
@@ -21,7 +24,8 @@ export default function NetworkTableRow({ network, onView, onDelete }) {
       animate={{ opacity: 1 }}
       className="hover:bg-gray-50"
     >
-      <td className="px-6 py-4 text-sm font-medium text-black-600">{name}</td>
+<td className="px-6 py-4 text-sm font-medium text-black-600">{cleanDataSetName}</td>
+<td className="px-6 py-4 text-sm font-medium text-black-600">{name}</td>
       <td className="px-6 py-4 text-sm font-medium text-black-600">
         {minParticipation} -- {timewindow} -- {edgeWeight}
       </td>

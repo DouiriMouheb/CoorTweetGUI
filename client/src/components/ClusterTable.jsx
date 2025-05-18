@@ -18,7 +18,7 @@ const ClusterTable = ({ networkData, loading, mode }) => {
 
     // Mode-specific data processing
     switch (mode) {
-      case "community": {
+      case "Cluster": {
         const communityMap = {};
 
         // Initialize community structure from vertices
@@ -46,89 +46,95 @@ const ClusterTable = ({ networkData, loading, mode }) => {
           }
         });
 
-        return {
-          columns: ["Community", "Accounts", "Posts", "Objects", "Avg Δ Time"],
-          data: Object.entries(communityMap).map(([community, stats]) => ({
-            Community: community,
-            Accounts: stats.accounts.size,
-            Posts: stats.posts,
-            Objects: stats.objects.size,
-            "Avg Δ Time": stats.timeDeltas.length > 0 
-  ? (stats.timeDeltas.reduce((a, b) => a + b, 0) / stats.timeDeltas.length).toFixed(2)
-  : 0
-          })).sort((a, b) => parseInt(a.Community) - parseInt(b.Community))
-        };
-      }
-      case "account": {
+  return {
+        columns: ["Cluster", "Average Coordination Time", "Shared Objects", "Connected Nodes"],
+        data: Object.entries(communityMap).map(([community, stats]) => ({
+          "Cluster": community,
+          "Average Coordination Time": stats.timeDeltas.length > 0 
+            ? (stats.timeDeltas.reduce((a, b) => a + b, 0) / stats.timeDeltas.length).toFixed(2)
+            : 0,
+          "Shared Objects": stats.objects.size,
+          "Connected Nodes": stats.accounts.size,
+        })).sort((a, b) => parseInt(a.Cluster) - parseInt(b.Cluster))
+      };
+    }
+      case "node": {
         const accountMap = {};
-
-        // Initialize account metrics from vertices
+  
         vertices.forEach(vertex => {
           accountMap[vertex.name] = {
-            posts: 0,
             objects: new Set(),
             timeDeltas: [],
-            community: vertex.community
+            community: vertex.community,
+            connectedAccounts: new Set() // NEW: Track connected accounts
           };
         });
-
-        // Aggregate edge data for both participants
+  
         edges.forEach(edge => {
-          [edge.from, edge.to].forEach(acc => {
-            if (accountMap[acc]) {
-              accountMap[acc].posts += edge.weight || 0;
-              accountMap[acc].objects.add(getEdgeProperty(edge, 'n_content_id'));
-              accountMap[acc].timeDeltas.push(edge.avg_time_delta || 0);
-            }
-          });
+          const from = edge.from;
+          const to = edge.to;
+          
+          // Add connection tracking
+          if (accountMap[from]) {
+            accountMap[from].connectedAccounts.add(to);
+            accountMap[from].objects.add(getEdgeProperty(edge, 'n_content_id'));
+            accountMap[from].timeDeltas.push(edge.avg_time_delta || 0);
+          }
+          if (accountMap[to]) {
+            accountMap[to].connectedAccounts.add(from);
+            accountMap[to].objects.add(getEdgeProperty(edge, 'n_content_id'));
+            accountMap[to].timeDeltas.push(edge.avg_time_delta || 0);
+          }
         });
-
+  
         return {
-          columns: ["Account", "Posts", "Objects", "Avg Δ Time", "Community"],
+          columns: ["Node Name", "Average Coordination Time", "Objects", "Connected Accounts", "Cluster"],
           data: Object.entries(accountMap).map(([account, stats]) => ({
-            Account: account,
-            Posts: stats.posts,
-            Objects: stats.objects.size,
-            "Avg Δ Time": stats.timeDeltas.length > 0
-              ? stats.timeDeltas.reduce((a, b) => a + b, 0) / stats.timeDeltas.length
+            "Node Name": account,
+            "Objects": stats.objects.size,
+            "Connected Accounts": stats.connectedAccounts.size,
+            "Average Coordination Time": stats.timeDeltas.length > 0
+              ? (stats.timeDeltas.reduce((a, b) => a + b, 0) / stats.timeDeltas.length).toFixed(2)
               : 0,
-            Community: stats.community || 'N/A'
-          })).sort((a, b) => a.Account.localeCompare(b.Account))
+            "Cluster": stats.community || 'N/A'
+          })).sort((a, b) => a["Node Name"].localeCompare(b["Node Name"]))
         };
       }
+  
 
       case "object": {
         const objectMap = {};
-
-        // Aggregate object-centric metrics from edges
+  
         edges.forEach(edge => {
           const contentId = getEdgeProperty(edge, 'n_content_id');
+          const fromVertex = vertices.find(v => v.name === edge.from);
+          const toVertex = vertices.find(v => v.name === edge.to);
+  
           objectMap[contentId] = objectMap[contentId] || {
             accounts: new Set(),
-            posts: 0,
+            clusters: new Set(), // NEW: Track clusters
             timeDeltas: []
           };
           
           objectMap[contentId].accounts.add(edge.from);
           objectMap[contentId].accounts.add(edge.to);
-          objectMap[contentId].posts += edge.weight || 0;
           objectMap[contentId].timeDeltas.push(edge.avg_time_delta || 0);
+  
+          // Track clusters
+          if (fromVertex) objectMap[contentId].clusters.add(fromVertex.community);
+          if (toVertex) objectMap[contentId].clusters.add(toVertex.community);
         });
-
+  
         return {
-          columns: ["Object ID", "Accounts", "Posts", "Avg Δ Time"],
+          columns: ["Object ID", "Number of Nodes", "Number of Clusters", "Average Coordination Time"],
           data: Object.entries(objectMap).map(([objectId, stats]) => ({
             "Object ID": objectId,
-            Accounts: stats.accounts.size,
-            Posts: stats.posts,
-            "Avg Δ Time": stats.timeDeltas.length > 0
-              ? stats.timeDeltas.reduce((a, b) => a + b, 0) / stats.timeDeltas.length
+            "Number of Nodes": stats.accounts.size,
+            "Number of Clusters": stats.clusters.size,
+            "Average Coordination Time": stats.timeDeltas.length > 0
+              ? (stats.timeDeltas.reduce((a, b) => a + b, 0) / stats.timeDeltas.length).toFixed(2)
               : 0
-          })).sort((a, b) => {
-            const numA = parseInt(a["Object ID"].match(/\d+/)?.[0] || 0);
-            const numB = parseInt(b["Object ID"].match(/\d+/)?.[0] || 0);
-            return numA - numB || a["Object ID"].localeCompare(b["Object ID"]);
-          })
+          }))
         };
       }
 
@@ -155,8 +161,8 @@ const ClusterTable = ({ networkData, loading, mode }) => {
   const PaginationControls = () => {
     const getTotalText = () => {
       switch(mode) {
-        case 'community': return `Total Communities: ${data.length}`;
-        case 'account': return `Total Accounts: ${data.length}`;
+        case 'Cluster': return `Total Clusters: ${data.length}`;
+        case 'node': return `Total Nodes: ${data.length}`;
         case 'object': return `Total Objects: ${data.length}`;
         default: return '';
       }

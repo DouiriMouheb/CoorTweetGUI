@@ -11,6 +11,7 @@ import NetworksTable from "./NetworksTable";
 import { useNetworks } from "../../hooks/useNetworks";
 import { useSearchAndPagination } from "../../hooks/useSearchAndPagination.js";
 import DuplicateModal from "../DuplicateModal.jsx";
+import Logo from '../Logo.jsx';
 
 const LandingDashboard = () => {
   const { showToast } = useToast();
@@ -173,6 +174,10 @@ const LandingDashboard = () => {
 
   return (
     <div className="w-full h-[100vh] mx-auto p-4 flex flex-col bg-gray-100 overflow-auto space-y-6">
+      {/* // With custom class for positioning */}
+{/* <div className="header">
+  <Logo className="header-logo" />
+</div> */}
       <Header
         user={user}
         isExpanded={isExpanded}
@@ -213,11 +218,16 @@ const LandingDashboard = () => {
               onCreateProject={handleCreateProject}
             />
           </div>
+          
         </div>
       ) : (
         activeComponent
       )}
 
+   {/* Add logo at the bottom */}
+   <div className="mt-auto flex justify-center pt-8 pb-4">
+        <Logo className="w-64" /> {/* Adjust width as needed */}
+      </div>
       <ConfirmationModal
         isOpen={deleteConfirmation.isOpen}
         onClose={closeDeleteDialog}

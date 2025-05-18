@@ -96,7 +96,7 @@ export default function NetworksTable({
     <div className="col-span-2 bg-white rounded-2xl shadow-lg overflow-hidden">
       <div className="p-6 border-b flex flex-col md:flex-row justify-between space-y-4 md:space-y-0">
         <div className="flex items-center">
-          <h2 className="text-xl font-semibold text-gray-800">All Networks</h2>
+          <h2 className="text-xl font-semibold text-gray-800">All Analysis</h2>
           {loading && (
             <div className="ml-3 w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
           )}
@@ -104,7 +104,7 @@ export default function NetworksTable({
         <div className="relative w-full md:w-64">
           <input
             type="text"
-            placeholder="Search networks..."
+            placeholder="Search Analysis..."
             className="w-full pl-4 pr-10 py-2 border rounded-lg focus:outline-none"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -125,9 +125,13 @@ export default function NetworksTable({
       <div className="overflow-visible" style={{ minHeight: "275px" }}>
         <table className="w-full">
           <thead className="bg-gray-50">
+            
             <tr>
+            <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">
+               Project Name
+              </th>
               <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">
-                Name
+                Analysis
               </th>
               <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase relative group overflow-visible">
                 <div className="flex items-center gap-2 relative group">

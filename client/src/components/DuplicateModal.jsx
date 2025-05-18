@@ -26,6 +26,22 @@ export default function DuplicateModal({
   const [analysisStatus, setAnalysisStatus] = useState("processing"); // "processing", "success", "error"
   const [savedNetworkId, setSavedNetworkId] = useState(null);
   const [errorData, setErrorData] = useState(null);
+  const getCleanDatasetName = (rawName) => {
+    if (!rawName) return "";
+    // Remove prefix (up to first "-"), remove .csv extension
+    return rawName.replace(/^[^-]*-/, "").replace(/\.csv$/i, "");
+  };
+
+  const extractCleanDatasetName = (name) => {
+    if (!name) return "";
+    const parts = name.split("-");
+    if (parts.length > 1) {
+      // Remove extension
+      return parts.slice(1).join("-").replace(".csv", "").trim();
+    }
+    return name.replace(".csv", "").trim();
+  };
+  
   const apiUrl = import.meta.env.VITE_API_URL;
   // Define the analysis steps
   const analysisSteps = [
@@ -46,7 +62,7 @@ export default function DuplicateModal({
   ];
   // Create validation schema
   const validationSchema = Yup.object({
-    projectName: Yup.string().required("Project name is required"),
+    projectName: Yup.string().required("Analysis name is required"),
     minParticipation: Yup.number()
       .required("Minimum participation is required")
       .min(1, "Must be at least 1"),
@@ -61,27 +77,35 @@ export default function DuplicateModal({
 
   // Setup formik with initial values from projectData
   const formik = useFormik({
-    initialValues: {
-      projectName: projectData?.projectName
-        ? `${projectData.projectName} (Copy)`
-        : "",
-      minParticipation: projectData?.minParticipation || 2,
-      timeWindow: projectData?.timeWindow || 60,
-      edgeWeight: projectData?.edgeWeight || 0.5,
-      dataSetName: dataSetName || "",
-    },
-    validationSchema,
-    onSubmit: (values) => {
-      // Log the form data to console
-      console.log("Form data submitted:", values);
-      // Start analysis
-      setTimeout(() => {
-        fetchDataFromAPI(values);
-      }, 0);
-      // Call the onConfirm function with the values
-      onConfirm(values);
-    },
-  });
+  initialValues: {
+    analysisName: projectData?.projectName
+      ? `${projectData.projectName} (Copy)`
+      : "",
+    minParticipation: projectData?.minParticipation || 2,
+    timeWindow: projectData?.timeWindow || 60,
+    edgeWeight: projectData?.edgeWeight || 0.5,
+    dataSetName: getCleanDatasetName(dataSetName),
+  },
+  validationSchema,
+  onSubmit: (values) => {
+    console.log("Form data submitted:", values);
+
+    // Map analysisName -> projectName before sending
+    const transformedValues = {
+      ...values,
+      projectName: values.analysisName,  // Send it as projectName
+    };
+    
+    // Start analysis
+    setTimeout(() => {
+      fetchDataFromAPI(transformedValues);
+    }, 0);
+
+    // Call onConfirm with transformed values
+    onConfirm(transformedValues);
+  },
+});
+
   const saveNetwork = async (data, parameters, token) => {
     // Update the analysis step to indicate we're saving the network
     setAnalysisStep(4);
@@ -333,6 +357,9 @@ export default function DuplicateModal({
     }
   }, [isOpen]);
 
+
+
+  
   // Update dataSetName value when prop changes
   useEffect(() => {
     if (dataSetName) {
@@ -374,17 +401,24 @@ export default function DuplicateModal({
                   </h3>
                   <p className="text-sm text-gray-500 mb-4">
                     You are about to start a new analysis based on the selected
-                    dataset.
+                    Project.
                   </p>
 
                   {/* Hidden input field for dataSetName */}
-                  <input
-                    type="hidden"
-                    id="dataSetName"
-                    name="dataSetName"
-                    value={formik.values.dataSetName}
-                    onChange={formik.handleChange}
-                  />
+                  {/* <h3 className="text-lg font-medium text-gray-900 mb-1">
+                    selected Project: {extractCleanDatasetName(dataSetName)}</h3> */}
+                 
+             
+  <div className="mb-4 rounded-lg bg-[#f5fcfa] p-4 border border-blue-200">
+    <h2 className="text-lg font-semibold text-[#00926c]">Selected Project</h2>
+    <p className="text-sm text-[#00926c]">{extractCleanDatasetName(dataSetName)}</p>
+  </div>
+
+
+                  {/* <h2 className="text-lg font-semibold">
+  Dataset: {extractCleanDatasetName(dataSetName)}
+</h2> */}
+                
                 </div>
               </div>
 
@@ -395,7 +429,8 @@ export default function DuplicateModal({
                     htmlFor="projectName"
                     className="text-sm font-medium md:col-span-1 md:text-right"
                   >
-                    Project Name:
+                    Analysis  
+                    Name:
                   </label>
                   <div className="md:col-span-2">
                     <input
