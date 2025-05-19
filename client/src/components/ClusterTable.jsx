@@ -46,18 +46,34 @@ const ClusterTable = ({ networkData, loading, mode }) => {
           }
         });
 
+  // return {
+  //       columns: ["Cluster", "Average Coordination Time", "Shared Objects", "Connected Nodes"],
+  //       data: Object.entries(communityMap).map(([community, stats]) => ({
+  //         "Cluster": community,
+  //         "Average Coordination Time": stats.timeDeltas.length > 0 
+  //           ? (stats.timeDeltas.reduce((a, b) => a + b, 0) / stats.timeDeltas.length).toFixed(2)
+  //           : 0,
+  //         "Shared Objects": stats.objects.size,
+  //         "Connected Nodes": stats.accounts.size,
+  //       })).sort((a, b) => parseInt(a.Cluster) - parseInt(b.Cluster))
+  //     };
+  //   }
+
   return {
-        columns: ["Cluster", "Average Coordination Time", "Shared Objects", "Connected Nodes"],
-        data: Object.entries(communityMap).map(([community, stats]) => ({
-          "Cluster": community,
-          "Average Coordination Time": stats.timeDeltas.length > 0 
-            ? (stats.timeDeltas.reduce((a, b) => a + b, 0) / stats.timeDeltas.length).toFixed(2)
-            : 0,
-          "Shared Objects": stats.objects.size,
-          "Connected Nodes": stats.accounts.size,
-        })).sort((a, b) => parseInt(a.Cluster) - parseInt(b.Cluster))
-      };
-    }
+    columns: ["Cluster", "Average Coordination Time", "Shared Objects", "Connected Nodes"],
+    data: Object.entries(communityMap).map(([community, stats]) => ({
+      "Cluster": community,
+      "Average Coordination Time": stats.timeDeltas.length > 0 
+        ? parseFloat(
+            (stats.timeDeltas.reduce((a, b) => a + b, 0) / stats.timeDeltas.length)
+            .toFixed(2) // Force 2 decimal places
+          ).toString() // Remove trailing zeros
+        : "0",
+      "Shared Objects": stats.objects.size,
+      "Connected Nodes": stats.accounts.size,
+    })).sort((a, b) => parseInt(a.Cluster) - parseInt(b.Cluster))
+  };
+}
       case "node": {
         const accountMap = {};
   
@@ -87,56 +103,112 @@ const ClusterTable = ({ networkData, loading, mode }) => {
           }
         });
   
-        return {
-          columns: ["Node Name", "Average Coordination Time", "Objects", "Connected Accounts", "Cluster"],
-          data: Object.entries(accountMap).map(([account, stats]) => ({
-            "Node Name": account,
-            "Objects": stats.objects.size,
-            "Connected Accounts": stats.connectedAccounts.size,
-            "Average Coordination Time": stats.timeDeltas.length > 0
-              ? (stats.timeDeltas.reduce((a, b) => a + b, 0) / stats.timeDeltas.length).toFixed(2)
-              : 0,
-            "Cluster": stats.community || 'N/A'
-          })).sort((a, b) => a["Node Name"].localeCompare(b["Node Name"]))
-        };
-      }
+      //   return {
+      //     columns: ["Node Name", "Average Coordination Time", "Objects", "Connected Accounts", "Cluster"],
+      //     data: Object.entries(accountMap).map(([account, stats]) => ({
+      //       "Node Name": account,
+      //       "Objects": stats.objects.size,
+      //       "Connected Accounts": stats.connectedAccounts.size,
+      //       "Average Coordination Time": stats.timeDeltas.length > 0
+      //         ? (stats.timeDeltas.reduce((a, b) => a + b, 0) / stats.timeDeltas.length).toFixed(2)
+      //         : 0,
+      //       "Cluster": stats.community || 'N/A'
+      //     })).sort((a, b) => a["Node Name"].localeCompare(b["Node Name"]))
+      //   };
+      // }
+      return {
+        columns: ["Node Name", "Average Coordination Time", "Number of Objects", "Connected Accounts", "Cluster"],
+        data: Object.entries(accountMap).map(([account, stats]) => ({
+          "Node Name": account,
+          "Number of Objects": stats.objects.size, // Changed column name
+          "Connected Accounts": stats.connectedAccounts.size,
+          "Average Coordination Time": stats.timeDeltas.length > 0
+            ? parseFloat(
+                (stats.timeDeltas.reduce((a, b) => a + b, 0) / stats.timeDeltas.length)
+                .toFixed(2)
+              ).toString()
+            : "0",
+          "Cluster": stats.community || 'N/A'
+        })).sort((a, b) => a["Node Name"].localeCompare(b["Node Name"]))
+      };
+    }
   
 
-      case "object": {
-        const objectMap = {};
-  
-        edges.forEach(edge => {
-          const contentId = getEdgeProperty(edge, 'n_content_id');
-          const fromVertex = vertices.find(v => v.name === edge.from);
-          const toVertex = vertices.find(v => v.name === edge.to);
-  
-          objectMap[contentId] = objectMap[contentId] || {
-            accounts: new Set(),
-            clusters: new Set(), // NEW: Track clusters
-            timeDeltas: []
-          };
-          
-          objectMap[contentId].accounts.add(edge.from);
-          objectMap[contentId].accounts.add(edge.to);
-          objectMap[contentId].timeDeltas.push(edge.avg_time_delta || 0);
-  
-          // Track clusters
-          if (fromVertex) objectMap[contentId].clusters.add(fromVertex.community);
-          if (toVertex) objectMap[contentId].clusters.add(toVertex.community);
-        });
-  
-        return {
-          columns: ["Object ID", "Number of Nodes", "Number of Clusters", "Average Coordination Time"],
-          data: Object.entries(objectMap).map(([objectId, stats]) => ({
-            "Object ID": objectId,
-            "Number of Nodes": stats.accounts.size,
-            "Number of Clusters": stats.clusters.size,
-            "Average Coordination Time": stats.timeDeltas.length > 0
-              ? (stats.timeDeltas.reduce((a, b) => a + b, 0) / stats.timeDeltas.length).toFixed(2)
-              : 0
-          }))
+
+    case "object": {
+      const shareMap = {}; // NEW: Aggregate by share counts
+      
+      edges.forEach(edge => {
+        const key = `${edge.weight || 0}`; // Using weight as share count
+        shareMap[key] = shareMap[key] || {
+          nodes: new Set(),
+          clusters: new Set(),
+          timeDeltas: []
         };
-      }
+        
+        shareMap[key].nodes.add(edge.from);
+        shareMap[key].nodes.add(edge.to);
+        shareMap[key].timeDeltas.push(edge.avg_time_delta || 0);
+  
+        // Track clusters
+        const fromVertex = vertices.find(v => v.name === edge.from);
+        const toVertex = vertices.find(v => v.name === edge.to);
+        if (fromVertex) shareMap[key].clusters.add(fromVertex.community);
+        if (toVertex) shareMap[key].clusters.add(toVertex.community);
+      });
+  
+      return {
+        columns: ["Number of Nodes", "Number of Clusters", "Average Coordination Time"],
+        data: Object.entries(shareMap).map(([shares, stats]) => ({
+          "Number of Nodes": stats.nodes.size,
+          "Number of Clusters": stats.clusters.size,
+          "Average Coordination Time": stats.timeDeltas.length > 0
+  ? parseFloat(
+      (stats.timeDeltas.reduce((a, b) => a + b, 0) / stats.timeDeltas.length)
+        .toFixed(2)
+    ).toString()
+  : "0"
+        })).sort((a, b) => b["Number of Nodes"] - a["Number of Nodes"])
+      };
+    }
+
+      // case "object": {
+      //   const objectMap = {};
+  
+      //   edges.forEach(edge => {
+      //     const contentId = getEdgeProperty(edge, 'n_content_id');
+      //     const fromVertex = vertices.find(v => v.name === edge.from);
+      //     const toVertex = vertices.find(v => v.name === edge.to);
+  
+      //     objectMap[contentId] = objectMap[contentId] || {
+      //       accounts: new Set(),
+      //       clusters: new Set(), // NEW: Track clusters
+      //       timeDeltas: []
+      //     };
+          
+      //     objectMap[contentId].accounts.add(edge.from);
+      //     objectMap[contentId].accounts.add(edge.to);
+      //     objectMap[contentId].timeDeltas.push(edge.avg_time_delta || 0);
+  
+      //     // Track clusters
+      //     if (fromVertex) objectMap[contentId].clusters.add(fromVertex.community);
+      //     if (toVertex) objectMap[contentId].clusters.add(toVertex.community);
+      //   });
+  
+      //   return {
+      //     columns: ["Object ID", "Number of Nodes", "Number of Clusters", "Average Coordination Time"],
+      //     data: Object.entries(objectMap).map(([objectId, stats]) => ({
+      //       "Object ID": objectId,
+      //       "Number of Nodes": stats.accounts.size,
+      //       "Number of Clusters": stats.clusters.size,
+      //       "Average Coordination Time": stats.timeDeltas.length > 0
+      //         ? (stats.timeDeltas.reduce((a, b) => a + b, 0) / stats.timeDeltas.length).toFixed(2)
+      //         : 0
+      //     }))
+      //   };
+      // }
+
+      
 
       default:
         return { columns: [], data: [] };
@@ -208,13 +280,30 @@ const ClusterTable = ({ networkData, loading, mode }) => {
   // CSV export functionality
   const downloadCSV = () => {
     if (data.length === 0) return;
-
+  
+    // Create CSV content with Excel/Sheets compatibility
     const csvContent = [
-      columns.join(','),
-      ...data.map(row => columns.map(col => `"${row[col]}"`).join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+      '\uFEFF' + // UTF-8 BOM for Excel
+      'sep=,\n' + // Excel separator directive
+      columns.join(','), // Header row
+      ...data.map(row => 
+        columns.map(col => {
+          // Convert to string and sanitize values
+          const value = String(row[col])
+            .replace(/"/g, '""') // Escape double quotes
+            .replace(/\n/g, ' ') // Remove newlines
+            .replace(/,/g, '，'); // Replace commas in data with full-width commas
+  
+          // Quote only fields that need protection
+          return value.includes(',') || value.includes('"') 
+            ? `"${value}"` 
+            : value;
+        }).join(',')
+      )
+    ].join('\r\n');
+  
+    // Create and trigger download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
